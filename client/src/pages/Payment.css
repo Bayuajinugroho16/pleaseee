@@ -1,0 +1,393 @@
+.payment-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.page-content {
+  padding-top: 0;
+}
+
+.payment-content {
+  padding: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* No Pending Booking */
+.no-pending-booking {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 16px;
+  margin: 2rem auto;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.no-pending-booking h2 {
+  color: #333;
+  margin-bottom: 1rem;
+  font-size: 1.8rem;
+}
+
+.no-pending-booking p {
+  color: #666;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.back-home-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-home-btn:hover {
+  background: #5a6fd8;
+  transform: translateY(-2px);
+}
+
+/* Payment Title */
+.payment-title {
+  text-align: center;
+  color: white;
+  margin-bottom: 2rem;
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+/* Order Summary Card */
+.order-summary-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.order-summary-card h3 {
+  color: #333;
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  border-bottom: 2px solid #f8f9fa;
+  padding-bottom: 0.5rem;
+}
+
+.order-details p {
+  margin: 0.75rem 0;
+  color: #333;
+}
+
+.order-details strong {
+  color: #2c5530;
+}
+
+.seats-list {
+  font-weight: bold;
+  color: #e53e3e;
+  background: #ffeaea;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+}
+
+.status-pending {
+  color: #ffc107;
+  font-weight: bold;
+  background: #fff3cd;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+/* QRIS Section */
+.qris-section {
+  text-align: center;
+  margin: 2rem 0;
+  padding: 2rem;
+  border: 2px solid #00AA5B;
+  border-radius: 16px;
+  background: #f0fff4;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.qris-section h3 {
+  color: #00AA5B;
+  margin-bottom: 0.5rem;
+  font-size: 1.3rem;
+}
+
+.qris-description {
+  color: #666;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+.qris-image {
+  width: 250px;
+  height: 250px;
+  border: 2px solid #00AA5B;
+  border-radius: 12px;
+  object-fit: cover;
+  margin: 0 auto;
+  display: block;
+}
+
+.qris-fallback {
+  width: 250px;
+  height: 250px;
+  border: 2px dashed #ff6b6b;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  background: #fff5f5;
+  padding: 1rem;
+}
+
+.fallback-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: #e53e3e;
+}
+
+.fallback-text {
+  color: #e53e3e;
+  text-align: center;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.fallback-subtext {
+  font-size: 0.7rem;
+  color: #999;
+}
+
+.payment-amount {
+  margin-top: 1rem;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+/* Upload Section */
+.upload-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.upload-section h3 {
+  color: #333;
+  margin-bottom: 0.5rem;
+  font-size: 1.3rem;
+}
+
+.upload-description {
+  color: #666;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+.file-input-container {
+  margin-bottom: 1rem;
+}
+
+.file-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  background: #f8f9fa;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.file-input:hover {
+  border-color: #667eea;
+  background: #f0f4ff;
+}
+
+.file-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.uploading-text {
+  color: #007bff;
+  font-weight: 500;
+  margin: 1rem 0;
+}
+
+.upload-success {
+  padding: 1rem;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  color: #155724;
+  font-weight: 500;
+}
+
+/* Payment Actions */
+.payment-actions {
+  display: flex;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.back-booking-btn {
+  flex: 1;
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-booking-btn:hover {
+  background: #545b62;
+  transform: translateY(-2px);
+}
+
+.confirm-payment-btn {
+  flex: 2;
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.confirm-payment-btn:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.confirm-payment-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Payment Info */
+.payment-info {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 12px;
+  padding: 1.5rem;
+  color: #856404;
+}
+
+.payment-info p {
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.payment-info ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.payment-info li {
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+/* Loading Animation */
+.confirm-payment-btn:disabled::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .payment-content {
+    padding: 1rem;
+  }
+
+  .payment-title {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .order-summary-card,
+  .qris-section,
+  .upload-section {
+    padding: 1.5rem;
+  }
+
+  .qris-image,
+  .qris-fallback {
+    width: 200px;
+    height: 200px;
+  }
+
+  .payment-actions {
+    flex-direction: column;
+  }
+
+  .back-booking-btn,
+  .confirm-payment-btn {
+    flex: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-content {
+    padding: 0.5rem;
+  }
+
+  .order-summary-card,
+  .qris-section,
+  .upload-section {
+    padding: 1rem;
+  }
+
+  .qris-image,
+  .qris-fallback {
+    width: 180px;
+    height: 180px;
+  }
+
+  .payment-amount {
+    font-size: 1rem;
+  }
+
+  .confirm-payment-btn {
+    font-size: 1rem;
+    padding: 12px 16px;
+  }
+}

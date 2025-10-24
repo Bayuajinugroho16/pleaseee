@@ -1,0 +1,210 @@
+/* components/NotificationPopup.css */
+.notification-popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 350px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  z-index: 10000;
+  animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-left: 5px solid #ccc;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.notification-popup.info {
+  border-left-color: #1890ff;
+  background: linear-gradient(135deg, #e6f7ff 0%, #ffffff 100%);
+}
+
+.notification-popup.success {
+  border-left-color: #52c41a;
+  background: linear-gradient(135deg, #f6ffed 0%, #ffffff 100%);
+}
+
+.notification-popup.warning {
+  border-left-color: #faad14;
+  background: linear-gradient(135deg, #fffbe6 0%, #ffffff 100%);
+}
+
+.notification-popup.error {
+  border-left-color: #ff4d4f;
+  background: linear-gradient(135deg, #fff2f0 0%, #ffffff 100%);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.popup-icon {
+  margin-right: 10px;
+  font-size: 1.3rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.popup-title {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.popup-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.popup-close:hover {
+  color: #666;
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: scale(1.1);
+}
+
+.popup-body {
+  padding: 15px 20px;
+}
+
+.popup-body p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #555;
+}
+
+.popup-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px 15px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.popup-footer small {
+  color: #888;
+  font-size: 0.75rem;
+}
+
+.popup-source {
+  color: #666;
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.popup-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #ccc, #999);
+  animation: progressShrink 6s linear forwards;
+}
+
+.notification-popup.info .progress-bar {
+  background: linear-gradient(90deg, #1890ff, #096dd9);
+}
+
+.notification-popup.success .progress-bar {
+  background: linear-gradient(90deg, #52c41a, #389e0d);
+}
+
+.notification-popup.warning .progress-bar {
+  background: linear-gradient(90deg, #faad14, #d48806);
+}
+
+.notification-popup.error .progress-bar {
+  background: linear-gradient(90deg, #ff4d4f, #cf1322);
+}
+
+@keyframes progressShrink {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .notification-popup {
+    width: 300px;
+    right: 10px;
+    top: 10px;
+  }
+  
+  .popup-header {
+    padding: 12px 15px 8px;
+  }
+  
+  .popup-body {
+    padding: 12px 15px;
+  }
+  
+  .popup-footer {
+    padding: 8px 15px 12px;
+  }
+}
+
+/* Hover effects */
+.notification-popup:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.notification-popup:hover .progress-bar {
+  animation-play-state: paused;
+}
+
+/* Tambahkan di NotificationPopup.css */
+.ws-status {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.ws-status.connected {
+  color: #52c41a;
+}
+
+.ws-status.disconnected {
+  color: #ff4d4f;
+}

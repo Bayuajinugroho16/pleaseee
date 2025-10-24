@@ -1,0 +1,80 @@
+.schedule-picker {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.schedule-picker h3 {
+  margin-bottom: 1.5rem;
+  color: #333;
+  text-align: center;
+  font-size: 1.5rem;
+}
+
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.schedule-card {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.schedule-card:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.schedule-card.selected {
+  border-color: #667eea;
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.schedule-time {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.schedule-theater {
+  font-size: 0.9rem;
+  color: inherit;
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+
+.schedule-price {
+  font-weight: bold;
+  color: inherit;
+}
+
+.selected-schedule-info {
+  padding: 1rem;
+  background: #e8f5e8;
+  border-radius: 5px;
+  border-left: 4px solid #4caf50;
+  text-align: center;
+}
+
+.selected-schedule-info h4 {
+  margin-bottom: 0.5rem;
+  color: #2e7d32;
+}
+
+.selected-schedule-info p {
+  margin-bottom: 0.25rem;
+  color: #666;
+}
