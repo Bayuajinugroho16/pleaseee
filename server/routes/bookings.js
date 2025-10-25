@@ -1,7 +1,6 @@
 const express = require('express');
 const { pool } = require('../config/database');
 const multer = require('multer');
-const path = require('path');
 const router = express.Router();
 
 // ✅ OCCUPIED SEATS ENDPOINT
@@ -747,24 +746,14 @@ router.get('/my-bookings', async (req, res) => {
   }
 });
 
-
-
-
-
-// Configure multer untuk file upload
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'public/uploads/payments/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'payment-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// ✅ Configure multer untuk file upload - MEMORY STORAGE ONLY
+const storage = multer.memoryStorage();
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { 
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
   fileFilter: function (req, file, cb) {
     // Hanya terima image dan PDF
     if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
