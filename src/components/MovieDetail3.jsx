@@ -23,73 +23,65 @@ const Moviedetail2 = () => { // ✅ Nama komponen: Moviedetail2
     fetchNowShowingMovies();
   }, []);
 
- const fetchNowShowingMovies = async () => {
+const fetchNowShowingMovies = async () => {
   try {
     // ✅ DATA 4 FILM KHUSUS UNTUK LAYAR 2
     const movies = [
       {
         id: 1,
-        title: "Sopir Angkot Menembus Asa dan Masa", 
+        title: "KEPADAMU DOA YANG TAK TERJAWAB", 
         kategori: "Gati Jemberan",
-        duration: " 10m ",
-        Asal: "Nirmala Production",
-        poster: "/film/1.png",
+        duration: "15m",
+        Asal: "Orens Production & SMKN 1 Cermee Bondowoso",
+        poster: "/film/3,1.jpg",
         detailLink: "/Moviedetail2",
-        synopsis: `Di negeri yang persyaratan kerjanya tak masuk akal, Revi (20) seorang mahasiswa sungkan yang terdesak oleh kebutuhan hidup menerima pekerjaan sebagai editor. 
+        synopsis: `Ina (17), siswi SMA yang bercita-cita menjadi guru, atas nama cinta dipaksa oleh ibunya menjaga kehormatan dihadapan keluarga kyai yang terpandang. Ia mempertaruhkan mimpinya dan harus rela menuruti kerahiman sang ibu. 
 
-Namun perjalanannya tidak semudah yang dibayangkan. Revi harus berhadapan dengan permintaan ambigu dan tuntutan yang tidak masuk akal dari kliennya. Di tengah tekanan ekonomi dan tuntutan akademis, ia harus menemukan cara untuk bertahan sambil menjaga integritas dan kesehatan mentalnya.
-
-Film ini mengangkat realitas keras dunia kerja freelance yang dihadapi generasi muda, menggambarkan perjuangan antara kebutuhan hidup dan prinsip diri dalam sistem yang seringkali tidak adil. Sebuah potret menyentuh tentang ketahanan manusia di tengah sistem yang rumit.`
+Dalam lika-liku dan luka yang terus menyertai, Ina menyingkap tabir, sebagai bentuk perlawanan terhadap kebohongan yang membungkam api kebenaran. Sebuah kisah tentang pergulatan antara tradisi, harapan keluarga, dan suara hati seorang remaja yang berusaha menemukan jati dirinya di tengah tekanan sosial yang membelenggu.`
       },
       {
         id: 2,
-        title: "Jagawana", 
-        kategori: " Pelajar ",
-        duration: " 8m ",
-        Asal: "Skrinova",
-        poster: "/film/2.jpg",
+        title: "LAILA", 
+        kategori: "Dokumenter",
+        duration: "15m",
+        Asal: "KALIBRASI",
+        poster: "/film/3,2.png",
         detailLink: "/Moviedetail2",
-        synopsis: `Yogyakarta yang dikenal sebagai kota pelajar hingga saat ini masih kesulitan dalam menanggulangi kekerasan dan kejahatan jalanan yang kerap dilakukan oleh para pemudanya. Di tengah permasalahan sosial yang tak kunjung usai ini, tumbuh komunitas kecil bernama Fight Club YK yang memiliki sub komunitas bernama Fight Club YK Camp.
+        synopsis: `Kisah penyandang disabilitas yang rentan terhadap lingkungan sosial dan hanya memiliki perlindungan secara sosial dari orangtuanya. Setelah orangtua meninggal, Laila merasa putus asa sehingga keluarga besarnya memasukkannya ke panti rehabilitasi sosial sebagai solusi permasalahannya.
 
-Komunitas ini tumbuh menjadi lebih dari sekadar klub bela diri. Didirikan oleh sekelompok anak muda yang resah dengan kejahatan dan kekerasan jalanan, mereka menggunakan ring tinju sebagai medium untuk meredam masalah sosial ini. Sebuah dokumenter tentang transformasi energi negatif menjadi kekuatan positif melalui olahraga.`
+Bangkit dari keterpurukan sepeninggal orangtuanya, Laila tidak pernah berkunjung sekalipun ke makam orangtuanya. Kekuatan itu ada setelah Laila merasa menjadi manusia yang bermanfaat dan mandiri terlepas inklusivitas pada tubuhnya. Sebuah perjalanan emosional tentang penerimaan diri dan makna kemandirian sejati.`
       },
       {
         id: 3,
-        title: "African Indonesian Journey", 
-        kategori: " Dokumenter ",
-        duration: " 17m ",
-        Asal: "Piring Kotor Production",
-        poster: "/film/3.PNG",
+        title: "PULASARA", 
+        kategori: "Fiksi",
+        duration: "10m",
+        Asal: "Skandium Project",
+        poster: "/film/3,3.jpg",
         detailLink: "/Moviedetail2",
-        synopsis: `Logandu, merupakan salah satu Desa di Kec. Karanggayam Kab. Kebumen Prov. Jawa Tengah. Di berbagai daerah terdapat adat istiadat yang bisa disebut sabanan yang berasal dari kata serada, salah satunya di desa Logandu.
+        synopsis: `Seorang bapak meninggal dunia dan merasakan suasana ketika pemulasaraan jenazahnya sendiri. Ia hanya bisa menyaksikan anak-anaknya yang seharusnya berduka justru sibuk berdebat.
 
-Di desa Logandu, adat serada biasanya melakukan bersih-bersih makam untuk menyambut bulan suci Ramadhan dan wujud penghormatan terhadap leluhur sekaligus perwujudan bakti anak cucu kepada orang tua. Setelah bersih-bersih makam, warga desa Logandu dibagi menjadi dua tempat untuk melakukan kendurenan di rumah pak kepala desa dan pak kepala dusun.
-
-Namun sebagian warga tertentu ada yang melakukan sendiri di rumahnya. Biasanya warga Logandu menyebutnya kendurenan untuk unggah-unggahan atau diangkatnya ruh leluhur. Setelah 22 hari berpuasa dilakukan kenduren lagi yang disebut kenduren likuran (udun udunan). Hal ini tentunya wujud dari kekompakan para warga untuk melakukan gotong-royong.`
+Dari sudut pandang arwah yang tak berdaya, film ini menyoroti ironi kehidupan keluarga modern di mana ritual kematian justru menjadi panggung untuk konflik warisan dan perselisihan. Sebuah refleksi mendalam tentang makna keluarga, warisan, dan apa yang benar-benar penting ketika seseorang meninggalkan dunia fana.`
       },
       {
         id: 4,
-        title: "Titip Pesan", 
-        kategori: "Fiksi Umum",
-        duration: " 15m ",
-        Asal: "BYFILMS",
-        poster: "/film/4.png",
+        title: "TEMBELEK", 
+        kategori: "Pelajar",
+        duration: "14m",
+        Asal: "SMKN-2-BAWANG",
+        poster: "/film/3,4.png",
         detailLink: "/Moviedetail2",
-        synopsis: `Seorang pria dari luar kota datang ke desa untuk melamar kekasihnya. Lamaran itu diterima dengan syarat ia harus tinggal di rumah adat yang telah disediakan sebagai bagian dari tradisi pernikahan. 
+        synopsis: `Film ini menceritakan ayam milik Sarti yang sering kali menciptakan masalah di lingkungan tetangganya, terutama di sekitar rumah Parni. Parni yang selama ini hanya menyimpan keresahannya, terhasut oleh Eni.
 
-Awalnya, pria itu merasa ragu karena rumah kayu itu tampak asing dan tak meyakinkan baginya. Ia sempat mengusulkan untuk tinggal sementara lalu pindah ke kota, namun ditolak oleh pasangannya yang ingin tetap di desa. 
-
-Saat memeriksa rumah lebih lanjut, pria itu menemukan banyak keunggulan tersembunyi dari struktur kokoh, pencahayaan alami, hingga kehangatan desain ruang tanpa sekat. Ia akhirnya menerima syarat tersebut, mengisi rumah dengan perabotan, dan menikah. 
-
-Bertahun-tahun kemudian, ia terlihat duduk di teras sebagai seorang kakek, tersenyum melihat cucu-cucunya bermain, mengenang keputusannya yang dulu. Sebuah kisah tentang cinta, tradisi, dan makna sebenarnya dari sebuah rumah.`
+Video tentang kotoran ayam Sarti pun ia kirimkan ke grup ibu-ibu RT. Konflik kecil ini berkembang menjadi drama komedi yang mengungkap dinamika hubungan tetangga di perumahan. Sebuah satire ringan tentang bagaimana masalah sepele bisa memicu konflik sosial yang tak terduga di tengah kehidupan masyarakat urban.`
       }
     ];
 
     setNowShowingMovies(movies);
     
-    // ✅ SET CURRENT MOVIE KE FILM PERTAMA (CURHATAN)
+    // ✅ SET CURRENT MOVIE KE FILM PERTAMA
     if (!movieFromState) {
-      setCurrentMovie(movies[0]); // Default ke film pertama (Curhatan)
+      setCurrentMovie(movies[0]); // Default ke film pertama
     }
   } catch (error) {
     console.error("Error fetching movies:", error);

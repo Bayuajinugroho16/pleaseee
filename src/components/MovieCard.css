@@ -55,6 +55,36 @@
   margin: 0 0 8px 0;
 }
 
+/* Styling untuk schedule di Home page */
+.movie-schedule-home {
+  margin: 8px 0;
+}
+
+.schedule-text {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 16px;
+  display: inline-block;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.schedule-text:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Atau jika mau lebih simple seperti di gambar */
+.schedule-text.simple {
+  background: #667eea;
+  padding: 0.4rem 0.8rem;
+  border-radius: 16px;
+  font-size: 16px;
+}
+
 .movie-price {
   font-weight: bold;
   color: #007bff;

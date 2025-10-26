@@ -29,11 +29,12 @@ const Moviedetail2 = () => { // ✅ Nama komponen: Moviedetail2
     const movies = [
       {
         id: 1,
-        title: "Sopir Angkot Menembus Asa dan Masa", 
-        kategori: "Gati Jemberan",
-        duration: " 10m ",
-        Asal: "Nirmala Production",
-        poster: "/film/1.png",
+        title: "Curhatan Revi Siterusah", 
+        kategori: "Fiksi Umum",
+        duration: " 19m ",
+        Asal: "Innerlight Creations",
+        poster: "/film/2,1.png",
+        showtimes: ["11:00"],
         detailLink: "/Moviedetail2",
         synopsis: `Di negeri yang persyaratan kerjanya tak masuk akal, Revi (20) seorang mahasiswa sungkan yang terdesak oleh kebutuhan hidup menerima pekerjaan sebagai editor. 
 
@@ -43,11 +44,12 @@ Film ini mengangkat realitas keras dunia kerja freelance yang dihadapi generasi 
       },
       {
         id: 2,
-        title: "Jagawana", 
-        kategori: " Pelajar ",
-        duration: " 8m ",
-        Asal: "Skrinova",
-        poster: "/film/2.jpg",
+        title: "Left Hook from Yogyakarta", 
+        kategori: " Dokumenter ",
+        duration: " 15m ",
+        Asal: "Universitas Muhammadiyah Yogyakarta",
+        poster: "/film/2,2.png",
+        showtimes: ["11:00"],
         detailLink: "/Moviedetail2",
         synopsis: `Yogyakarta yang dikenal sebagai kota pelajar hingga saat ini masih kesulitan dalam menanggulangi kekerasan dan kejahatan jalanan yang kerap dilakukan oleh para pemudanya. Di tengah permasalahan sosial yang tak kunjung usai ini, tumbuh komunitas kecil bernama Fight Club YK yang memiliki sub komunitas bernama Fight Club YK Camp.
 
@@ -55,11 +57,12 @@ Komunitas ini tumbuh menjadi lebih dari sekadar klub bela diri. Didirikan oleh s
       },
       {
         id: 3,
-        title: "African Indonesian Journey", 
-        kategori: " Dokumenter ",
-        duration: " 17m ",
-        Asal: "Piring Kotor Production",
-        poster: "/film/3.PNG",
+        title: "Serada", 
+        kategori: "Pelajar",
+        duration: " 7m ",
+        Asal: "SMKN 1 Karanggayam Kebumen",
+        poster: "/film/2,3.png",
+        showtimes: ["11:00"],
         detailLink: "/Moviedetail2",
         synopsis: `Logandu, merupakan salah satu Desa di Kec. Karanggayam Kab. Kebumen Prov. Jawa Tengah. Di berbagai daerah terdapat adat istiadat yang bisa disebut sabanan yang berasal dari kata serada, salah satunya di desa Logandu.
 
@@ -69,11 +72,12 @@ Namun sebagian warga tertentu ada yang melakukan sendiri di rumahnya. Biasanya w
       },
       {
         id: 4,
-        title: "Titip Pesan", 
-        kategori: "Fiksi Umum",
-        duration: " 15m ",
-        Asal: "BYFILMS",
-        poster: "/film/4.png",
+        title: "Tanah & Ikat", 
+        kategori: "Gati Jemberan",
+        duration: " 10m ",
+        Asal: "Pintu Project X Jawara Film",
+        poster: "/film/2,4.jpg",
+        showtimes: ["11:00"],
         detailLink: "/Moviedetail2",
         synopsis: `Seorang pria dari luar kota datang ke desa untuk melamar kekasihnya. Lamaran itu diterima dengan syarat ia harus tinggal di rumah adat yang telah disediakan sebagai bagian dari tradisi pernikahan. 
 
@@ -222,7 +226,7 @@ Bertahun-tahun kemudian, ia terlihat duduk di teras sebagai seorang kakek, terse
         {/* Now Showing Section - OPSIONAL: bisa dihapus jika tidak perlu */}
         <section className="now-showing-section">
           <div className="section-header">
-            <h2>🎬 Showing </h2>
+            <h2>🎬 Showing</h2>
           </div>
 
           <div className="now-showing-grid">

@@ -7,99 +7,62 @@ import './Home.css';
 
 const Home = () => {
   const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false); // ✅ Set false karena langsung pakai data lokal
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchMovies();
+    // ✅ LANGSUNG PAKAI DATA LOKAL TANPA FETCH API
+    setMovies(getLocalMovies());
   }, []);
 
-  const fetchMovies = async () => {
-    try {
-      console.log('🔄 Fetching movies...');
-      const response = await fetch('https://beckendflyio.vercel.app/api/movies');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('📦 API Response:', data);
-      
-      // ✅ Handle different response structures
-      if (data.success && Array.isArray(data.data)) {
-        setMovies(data.data);
-      } else if (Array.isArray(data)) {
-        setMovies(data);
-      } else {
-        // Fallback data
-        setMovies(getFallbackMovies());
-      }
-      
-    } catch (error) {
-      console.error('❌ Error fetching movies:', error);
-      setError('Server not available - using demo data');
-      setMovies(getFallbackMovies());
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getFallbackMovies = () => [
+  // ✅ DATA LOKAL LANGSUNG - TANPA API
+  const getLocalMovies = () => [
     {
       id: 1,
       title: "Layar Kompetisi 1",
-      genre: "",
-      duration: "3h 12m",
-      price: 55000,
-      rating: "8.1",
+
+      price: 15000,
       poster: "/film/layar1.png",
-      showtimes: ["10:00", "13:30", "17:00", "20:30"]
+      showtimes: ["19:00"],
+      detailLink: "/Moviedetail",
+      hari: "Sabtu",
+      tanggal: "06 November 2025",
+      jam: "19:00 WIB"
+
     },
     {
       id: 2,
-      title: "BLACK PANTHER: WAKANDA FOREVER",
-      genre: "Action, Adventure",
-      duration: "2h 41m",
-      price: 45000,
-      rating: "7.8",
-      poster: "https://via.placeholder.com/300x400/28a745/ffffff?text=PANTHER",
-      showtimes: ["11:00", "14:30", "18:00", "21:30"]
+      title: "Layar Kompetisi 2",
+      Hari : "Senin",
+      price: 15000,
+      poster: "/film/layar2.png",
+      showtimes: ["11:00",],
+      detailLink: "/Moviedetail2", 
+      tanggal: "07 November 2025",
+      jam: "13:30 WIB"
     },
     {
       id: 3,
-      title: "SPIDER-MAN: NO WAY HOME",
-      genre: "Action, Adventure",
-      duration: "2h 28m",
-      price: 48000,
-      rating: "8.5",
-      poster: "https://via.placeholder.com/300x400/dc3545/ffffff?text=SPIDERMAN",
-      showtimes: ["12:00", "15:30", "19:00"]
+      title: "Layar Kompetisi 3",
+      price: 15000,
+      poster: "/film/layar3.png",
+      showtimes: ["12:00", "15:30", "19:00"],
+       detailLink: "/Moviedetail3",
+      tanggal: "07 November 2025",
+      jam: "16:00 WIB"
     },
     {
       id: 4,
-      title: "THE BATMAN",
-      genre: "Action, Crime",
-      duration: "2h 56m",
-      price: 47000,
-      rating: "8.2",
-      poster: "https://via.placeholder.com/300x400/6f42c1/ffffff?text=BATMAN",
-      showtimes: ["13:00", "16:30", "20:00"]
+      title: "Layar Kompetisi 4",
+      price: 15000,
+      poster: "/film/layar4.png",
+      showtimes: ["13:00", "16:30", "20:00"],
+       detailLink: "/Moviedetail4",
+       tanggal: "08 November 2025",
+      jam: "15:00 WIB" 
     }
+    
   ];
-
-  if (loading) {
-    return (
-      <div className="home-container">
-        <Navigation />
-        <div className="loading">
-          <div className="loading-spinner"></div>
-          <p>Loading movies...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="home-container">
@@ -110,11 +73,6 @@ const Home = () => {
         <div className="hero-section">
           <h1> UNEJ FILM FESTIVAL </h1>
           <p>Amankan Tiketmu Sekarang !! </p>
-          {error && (
-            <div className="warning-banner">
-              ⚠️ {error}
-            </div>
-          )}
         </div>
 
         {/* Now Showing Section */}
@@ -123,21 +81,12 @@ const Home = () => {
             <h2>Book Your Ticket </h2>
           </div>
           
-          {movies.length > 0 ? (
-            <div className="movies-grid">
-              {movies.map(movie => (
-                <MovieCard key={movie.id} movie={movie} />
-              ))}
-            </div>
-          ) : (
-            <div className="no-movies">
-              <h3>No Movies Available</h3>
-              <p>There are currently no movies showing. Please check back later.</p>
-              <button onClick={fetchMovies} className="refresh-btn">
-                Refresh Movies
-              </button>
-            </div>
-          )}
+          {/* ✅ LANGSUNG RENDER MOVIES - PASTI ADA DATA */}
+          <div className="movies-grid">
+            {movies.map(movie => (
+              <MovieCard key={movie.id} movie={movie} />
+            ))}
+          </div>
         </div>
       </div>
     </div>

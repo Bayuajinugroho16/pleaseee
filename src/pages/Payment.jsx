@@ -214,9 +214,9 @@ const Payment = () => {
 
           {/* QRIS GoPay */}
           <div className="qris-section">
-            <h3>💰 Scan QRIS GoPay</h3>
+            <h3> Bayar Sesuai Total Nominal </h3>
             <p className="qris-description">
-              Scan QR code below using GoPay app
+              Screenshoot Untuk Scan QR Code
             </p>
 
             {!qrImageError ? (
@@ -323,6 +323,7 @@ const Payment = () => {
               <li>Upload proof of payment after transferring</li>
               <li>Seats will be reserved after payment confirmation</li>
               <li>You will receive e-ticket after payment verification</li>
+              <li>Save Your e-ticket and Reedem it on the day of show</li>
             </ul>
           </div>
         </div>

@@ -286,9 +286,11 @@ const Login = () => {
 
           <div className="server-info">
             <small>
-              <strong>Backend:</strong> https://beckendflyio.vercel.app
+               <strong>Hubungi Nomor dibawah ini, Jika ada kendala</strong>
+               <br /> 
+              <strong>Contact Person 1:</strong> 085732897364 (Fayla) 
               <br />
-              <strong>Login dengan:</strong> username & password
+              <strong>Contact Person 2:</strong> 0895421423739 (Ratna)
             </small>
           </div>
         </div>

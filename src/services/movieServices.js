@@ -17,18 +17,18 @@ export const getMovies = async () => {
   } catch (error) {
     console.error('❌ Error fetching movies:', error);
     
-    // ✅ FALLBACK DATA DENGAN GAMBAR ASSETS
+    // ✅ FALLBACK DATA DENGAN PATH RELATIVE
     return {
       success: true,
       data: [
         {
           id: 1,
           title: "Layar Kompetisi 1",
-          genre: "",
+          genre: " ",
           duration: "3h 1m",
           showtimes: ["10:00", "14:00", "18:00"],
           price: 50000,
-          poster: "/film/layar1.png"  // ✅ Ganti dengan path assets
+          poster: "/film/layar1.png"  // ✅ Path relative dari public folder
         },
         {
           id: 2,
@@ -37,7 +37,7 @@ export const getMovies = async () => {
           duration: "2h 56m",
           showtimes: ["11:00", "15:00", "19:00"],
           price: 45000,
-          poster: "/film/layar2.png"  // ✅ Ganti dengan path assets
+          poster: "/film/layar2.png"  // ✅ Path relative dari public folder
         },
         {
           id: 3,
@@ -46,7 +46,7 @@ export const getMovies = async () => {
           duration: "2h 28m", 
           showtimes: ["12:00", "16:00", "20:00"],
           price: 48000,
-          poster: "/film/layar3.png"  // ✅ Ganti dengan path assets
+          poster: "/film/layar3.png"  // ✅ Path relative dari public folder
         },
         {
           id: 4,
@@ -55,7 +55,7 @@ export const getMovies = async () => {
           duration: "2h 41m",
           showtimes: ["13:00", "17:00", "21:00"],
           price: 52000,
-          poster: "/film/layar4.png"  // ✅ Ganti dengan path assets
+          poster: "/film/layar4.png"  // ✅ Path relative dari public folder
         }
       ],
       total: 4,

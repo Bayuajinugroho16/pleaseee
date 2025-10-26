@@ -287,7 +287,7 @@ const Booking = () => {
             </p>
           </div>
 
-          {/* Refresh Button */}
+          {/* Refresh Button
           <div className="refresh-section">
             <button 
               onClick={refreshSeatData}
@@ -296,9 +296,9 @@ const Booking = () => {
               🔄 Refresh Seat Availability
             </button>
             <small>Klik jika kursi tidak ter-update dengan benar</small>
-          </div>
+          </div> */}
 
-          {/* Movie Info */}
+          {/* Movie Info
           <div className="movie-info-card">
             <h2>{movie.title}</h2>
             <div className="movie-details">
@@ -307,7 +307,7 @@ const Booking = () => {
               <p><strong>Showtime:</strong> {showtime}</p>
               <p><strong>Price per seat:</strong> Rp {(movie.price || 50000).toLocaleString()}</p>
             </div>
-          </div>
+          </div> */}
 
           <div className="booking-grid">
             {/* Seat Selection */}
@@ -409,13 +409,13 @@ const Booking = () => {
                   {loading ? 'Processing...' : `Continue to Payment`}
                 </button>
 
-                <div className="debug-info">
+                {/* <div className="debug-info">
                   <small>
                     🔍 Debug: User: {user.username} • 
                     showtime "{showtime}" → ID: {findShowtimeId(showtime)} • 
                     Movie: "{movie.title}"
                   </small>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

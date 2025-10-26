@@ -23,7 +23,7 @@ const QRCodeTicket = ({ bookingData }) => {
       <div className="ticket">
         {/* Ticket Header */}
         <div className="ticket-header">
-          <h1>🎬 CinemaMax</h1>
+          <h1>🎬 UNEFF 2025</h1>
           <div className="booking-reference">
             REF: {bookingData.booking_reference}
           </div>
@@ -85,7 +85,7 @@ const QRCodeTicket = ({ bookingData }) => {
 
         {/* Footer */}
         <div className="ticket-footer">
-          <p>Terima kasih telah memesan di CinemaMax</p>
+          <p>Terima kasih telah memesan di UNEFF 2025</p>
           <p>Harap datang 15 menit sebelum film dimulai</p>
         </div>
       </div>

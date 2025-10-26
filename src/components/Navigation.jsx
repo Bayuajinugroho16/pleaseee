@@ -20,7 +20,7 @@ const Navigation = () => {
       <div className="nav-container">
         {/* Logo/Brand */}
         <div className="nav-brand">
-          <Link to="/home">🎬 CinemaApp</Link>
+          <Link to="/home">🎬 UNEFF 2025</Link>
         </div>
 
         {/* Navigation Links */}

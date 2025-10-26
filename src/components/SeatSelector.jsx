@@ -239,7 +239,7 @@ const ws = new WebSocket(`${import.meta.env.VITE_WS_URL}?showtime=${showtimeId}`
           </div>
         </div>
         
-        <div className="debug-info">
+        {/* <div className="debug-info">
           <small>
             🔍 Film: "{movieTitle}" • 
             Terisi: {occupiedSeats.length} kursi •
@@ -249,7 +249,7 @@ const ws = new WebSocket(`${import.meta.env.VITE_WS_URL}?showtime=${showtimeId}`
           <small>
             🎯 Occupied: {occupiedSeats.join(', ') || 'None'}
           </small>
-        </div>
+        </div> */}
       </div>
 
       {/* Legend */}
