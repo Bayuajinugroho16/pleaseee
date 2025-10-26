@@ -17,31 +17,49 @@ export const getMovies = async () => {
   } catch (error) {
     console.error('❌ Error fetching movies:', error);
     
-    // Fallback data jika API error
+    // ✅ FALLBACK DATA DENGAN GAMBAR ASSETS
     return {
       success: true,
       data: [
         {
           id: 1,
-          title: "Avengers: Endgame",
-          genre: "Action",
+          title: "Layar Kompetisi 1",
+          genre: "",
           duration: "3h 1m",
           showtimes: ["10:00", "14:00", "18:00"],
           price: 50000,
-          poster: "/images/movie1.jpg"
+          poster: "/film/layar1.png"  // ✅ Ganti dengan path assets
         },
         {
           id: 2,
-          title: "The Batman",
-          genre: "Action",
+          title: "Layar Kompetisi 2", 
+          genre: "",
           duration: "2h 56m",
           showtimes: ["11:00", "15:00", "19:00"],
           price: 45000,
-          poster: "/images/movie2.jpg"
+          poster: "/film/layar2.png"  // ✅ Ganti dengan path assets
+        },
+        {
+          id: 3,
+          title: "Layar Kompetisi 3",
+          genre: "",
+          duration: "2h 28m", 
+          showtimes: ["12:00", "16:00", "20:00"],
+          price: 48000,
+          poster: "/film/layar3.png"  // ✅ Ganti dengan path assets
+        },
+        {
+          id: 4,
+          title: "Layar Kompetisi 4",
+          genre: "", 
+          duration: "2h 41m",
+          showtimes: ["13:00", "17:00", "21:00"],
+          price: 52000,
+          poster: "/film/layar4.png"  // ✅ Ganti dengan path assets
         }
       ],
-      total: 2,
-      message: "Using fallback data"
+      total: 4,
+      message: "Using fallback data with assets images"
     };
   }
 };

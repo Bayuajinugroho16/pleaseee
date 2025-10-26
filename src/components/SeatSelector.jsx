@@ -171,7 +171,7 @@ const ws = new WebSocket(`${import.meta.env.VITE_WS_URL}?showtime=${showtimeId}`
         </div>
       </div>
 
-      <div className="cinema-screen">🎬 LAYAR BIOSKOP 🎬</div>
+      <div className="cinema-screen"> LAYAR BIOSKOP </div>
       
       <div className="seat-map">
         {rows.map(row => (

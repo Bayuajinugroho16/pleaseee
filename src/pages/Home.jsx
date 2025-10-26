@@ -49,12 +49,12 @@ const Home = () => {
   const getFallbackMovies = () => [
     {
       id: 1,
-      title: "AVATAR: THE WAY OF WATER",
-      genre: "Adventure, Sci-Fi",
+      title: "Layar Kompetisi 1",
+      genre: "",
       duration: "3h 12m",
       price: 55000,
       rating: "8.1",
-      poster: "https://via.placeholder.com/300x400/007bff/ffffff?text=AVATAR",
+      poster: "/film/layar1.png",
       showtimes: ["10:00", "13:30", "17:00", "20:30"]
     },
     {
