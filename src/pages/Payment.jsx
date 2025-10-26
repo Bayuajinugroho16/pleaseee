@@ -21,11 +21,12 @@ const Payment = () => {
     console.log("Pending Booking:", pendingBooking);
   }, []);
 
-  // Handle File Upload - TANPA auto confirm
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      console.log("📁 File Selected:", file.name);
+      console.log("=== 🚀 UPLOAD PROCESS START ===");
+      console.log("📁 File Selected:", file);
+      console.log("🎫 Booking Reference:", pendingBooking.booking_reference);
 
       setUploading(true);
 
@@ -34,8 +35,13 @@ const Payment = () => {
         formData.append("payment_proof", file);
         formData.append("booking_reference", pendingBooking.booking_reference);
 
+        // Log FormData contents
+        for (let [key, value] of formData.entries()) {
+          console.log(`📦 FormData: ${key} =`, value);
+        }
+
         console.log(
-          "📤 Uploading file to:",
+          "📤 Uploading to:",
           "https://beckendflyio.vercel.app/api/bookings/upload-payment"
         );
 
@@ -47,27 +53,36 @@ const Payment = () => {
           }
         );
 
-        console.log("📥 Upload Response Status:", response.status);
+        console.log("📥 Response Status:", response.status);
+        console.log("📥 Response OK:", response.ok);
 
-        if (!response.ok) {
-          throw new Error(`Upload failed with status: ${response.status}`);
+        const responseText = await response.text();
+        console.log("📥 Raw Response:", responseText);
+
+        let result;
+        try {
+          result = JSON.parse(responseText);
+          console.log("✅ Parsed Result:", result);
+        } catch (parseError) {
+          console.error("❌ JSON Parse Error:", parseError);
+          throw new Error(`Invalid JSON response: ${responseText}`);
         }
 
-        const result = await response.json();
-        console.log("✅ Upload Result:", result);
+        if (!response.ok) {
+          throw new Error(`Upload failed with status: ${response.status} - ${result.message}`);
+        }
 
         if (result.success) {
+          console.log("🎉 UPLOAD SUCCESS!");
           setPaymentProof({
             name: file.name,
             type: file.type,
             size: file.size,
-            path: result.filePath,
             fileName: result.fileName,
+            filePath: result.filePath || null, // Optional
           });
           
-          // ✅ TAMPILKAN KONFIRMASI SETELAH UPLOAD BERHASIL
           setShowConfirmation(true);
-          
         } else {
           alert("Upload failed: " + result.message);
         }
