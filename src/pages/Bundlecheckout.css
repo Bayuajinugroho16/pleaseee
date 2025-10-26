@@ -56,10 +56,10 @@
 }
 
 .bundle-image {
-  width: 120px;
-  height: 120px;
+  width: 362px;
+  height: 280px;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 0px;
 }
 
 .bundle-info h4 {

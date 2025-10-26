@@ -526,7 +526,7 @@ const BundleCheckout = () => {
               </div>
 
               {/* Payment Instructions */}
-              <div className="payment-instructions">
+              {/* <div className="payment-instructions">
                 <h4>💳 Instruksi Pembayaran</h4>
                 <div className="bank-details">
                   <p><strong>Bank BCA</strong></p>
@@ -536,7 +536,7 @@ const BundleCheckout = () => {
                 <p className="instruction-note">
                   Transfer sesuai total pembayaran dan upload bukti transfer di form sebelah
                 </p>
-              </div>
+              </div> */}
             </div>
 
             {/* Customer Form & Payment Upload */}
@@ -575,14 +575,14 @@ const BundleCheckout = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="email">Email</label>
+                  <label htmlFor="email">Alamat</label>
                   <input
                     type="email"
                     id="email"
                     name="email"
                     value={customerData.email}
                     onChange={handleInputChange}
-                    placeholder="optional@email.com"
+                    placeholder="Masukkan Alamat Lengkap "
                   />
                 </div>
 
@@ -646,10 +646,11 @@ const BundleCheckout = () => {
                 <div className="payment-info">
                   <p>⚠️ <strong>Important:</strong></p>
                   <ul>
-                    <li>Nama telah diisi otomatis sesuai akun login</li>
                     <li>Complete payment within 30 minutes</li>
                     <li>Upload proof of payment after transferring</li>
                     <li>Bundle akan aktif setelah verifikasi pembayaran</li>
+                    <li>Save Your e-ticket and Reedem it on the day of show</li>
+                    <li>Pemesanan setelah 31 Oktober 2025 akan tergolong sebagai pre-order</li>
                   </ul>
                 </div>
 
