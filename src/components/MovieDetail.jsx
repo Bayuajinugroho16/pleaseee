@@ -179,6 +179,84 @@ const MovieDetail = () => {
           </div>
         </div>
 
+        
+<div class="bundle-section">
+  <div class="section-header">
+    <h2>🎁 Special Ticket Bundles</h2>
+    <p>Get more value with our exclusive packages</p>
+  </div>
+  
+  <div class="bundle-grid">
+    
+    <div class="bundle-card">
+      <div class="bundle-poster">
+        <img src="/assets/1.png" alt="Family Bundle" />
+      </div>
+      <div class="bundle-content">
+        <h3>Family Package</h3>
+        <p>4 tickets + 2 large popcorn + 4 drinks</p>
+        <div class="bundle-meta">
+          <span class="original-price">Rp 280.000</span>
+          <span class="bundle-price">Rp 200.000</span>
+          <span class="savings">Save 29%</span>
+        </div>
+        <button class="bundle-btn" data-bundle="family">Select Bundle</button>
+      </div>
+    </div>
+
+   
+    <div class="bundle-card">
+      <div class="bundle-poster">
+        <img src="/assets/2.jpg" alt="Couple Bundle" />
+      </div>
+      <div class="bundle-content">
+        <h3>Couple Package</h3>
+        <p>2 tickets + 1 medium popcorn + 2 drinks</p>
+        <div class="bundle-meta">
+          <span class="original-price">Rp 140.000</span>
+          <span class="bundle-price">Rp 120.000</span>
+          <span class="savings">Save 14%</span>
+        </div>
+        <button class="bundle-btn" data-bundle="couple">Select Bundle</button>
+      </div>
+    </div>
+
+    
+    <div class="bundle-card">
+      <div class="bundle-poster">
+        <img src="/assets/3.PNG" alt="Student Bundle" />
+      </div>
+      <div class="bundle-content">
+        <h3>Student Package</h3>
+        <p>1 ticket + 1 snack + 1 drink</p>
+        <div class="bundle-meta">
+          <span class="original-price">Rp 65.000</span>
+          <span class="bundle-price">Rp 50.000</span>
+          <span class="savings">Save 23%</span>
+        </div>
+        <button class="bundle-btn" data-bundle="student">Select Bundle</button>
+      </div>
+    </div>
+
+    
+    <div class="bundle-card">
+      <div class="bundle-poster">
+        <img src="/assets/4.png" alt="VIP Bundle" />
+      </div>
+      <div class="bundle-content">
+        <h3>VIP Package</h3>
+        <p>2 premium tickets + luxury seating + gourmet snacks</p>
+        <div class="bundle-meta">
+          <span class="original-price">Rp 400.000</span>
+          <span class="bundle-price">Rp 300.000</span>
+          <span class="savings">Save 25%</span>
+        </div>
+        <button class="bundle-btn" data-bundle="vip">Select Bundle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
         {/* Now Showing Section - 4 Movies */}
         <section className="now-showing-section">
           <div className="section-header">

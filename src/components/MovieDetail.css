@@ -520,6 +520,239 @@
   }
 }
 
+/* Bundle Section Styles */
+.bundle-section {
+  margin: 4rem 0;
+  padding: 3rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bundle-section .section-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.bundle-section .section-header h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #ffffff;
+  background: linear-gradient(45deg, #ff6b6b, #feca57);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bundle-section .section-header p {
+  font-size: 1.2rem;
+  color: #b0b0b0;
+}
+
+/* Bundle Grid */
+.bundle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Bundle Card */
+.bundle-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.bundle-card:hover {
+  transform: translateY(-8px);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(102, 126, 234, 0.5);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+.bundle-poster {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.bundle-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.bundle-card:hover .bundle-poster img {
+  transform: scale(1.05);
+}
+
+.bundle-content {
+  padding: 1.5rem;
+}
+
+.bundle-content h3 {
+  color: white;
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.bundle-content p {
+  color: #b0b0b0;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+/* Bundle Price & Meta */
+.bundle-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.original-price {
+  color: #b0b0b0;
+  text-decoration: line-through;
+  font-size: 0.9rem;
+}
+
+.bundle-price {
+  color: #feca57;
+  font-weight: bold;
+  font-size: 1.3rem;
+}
+
+.savings {
+  color: #ff6b6b;
+  font-weight: bold;
+  font-size: 0.8rem;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 10px;
+  align-self: flex-start;
+}
+
+/* Bundle Button */
+.bundle-btn {
+  width: 100%;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.bundle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* Bundle Modal (Jika pakai modal) */
+.bundle-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  padding: 2rem;
+  border-radius: 20px;
+  max-width: 900px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.close-modal {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.close-modal:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Bundle Ticket Button in Movie Detail */
+.bundle-ticket-btn {
+  background: linear-gradient(45deg, #ff6b6b, #feca57);
+  color: white;
+  border: none;
+  padding: 1.25rem 2rem;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+  margin-top: 1rem;
+}
+
+.bundle-ticket-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(255, 107, 107, 0.6);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .bundle-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .bundle-section .section-header h2 {
+    font-size: 2rem;
+  }
+  
+  .bundle-content {
+    padding: 1rem;
+  }
+  
+  .modal-content {
+    padding: 1.5rem;
+    width: 95%;
+  }
+}
+
+@media (max-width: 480px) {
+  .bundle-section {
+    margin: 2rem 0;
+    padding: 2rem 0;
+  }
+  
+  .bundle-poster {
+    height: 150px;
+  }
+}
+
 @media (max-width: 480px) {
   .now-showing-grid {
     grid-template-columns: 1fr;
