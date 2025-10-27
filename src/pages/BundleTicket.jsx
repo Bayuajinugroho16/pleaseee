@@ -43,7 +43,7 @@ const BundleTicket = () => {
       originalPrice: 40000,
       bundlePrice: 35000,
       savings: 5000,
-      image: "/film/Paket3.jpg",
+      image: "/film/Paket4.jpg",
       features: [
         "1 Tiket Kompetisi",
         "1 Keychain",
@@ -76,7 +76,7 @@ const BundleTicket = () => {
       originalPrice: 85000,
       bundlePrice: 79000,
       savings: 6000,
-      image: "/film/Paket5.jpg",
+      image: "/film/Paket8.jpg",
       features: [
         "4 tiket kompetisi",
         "1 Sticker Pack,",
@@ -92,7 +92,7 @@ const BundleTicket = () => {
       originalPrice: 107000,
       bundlePrice: 100000,
       savings: 7000,
-      image: "/film/Paket6.jpg",
+      image: "/film/Paket5.jpg",
       features: [
         "1 tiket kompetisi ",
         "1 Tumblr ",
@@ -107,7 +107,7 @@ const BundleTicket = () => {
       originalPrice: 150000,
       bundlePrice: 142000,
       savings: 8000,
-      image: "/film/Paket7.jpg",
+      image: "/film/Paket6.jpg",
       features: [
         "3 tiket kompetisi",
         "1 Baju ",
@@ -123,7 +123,7 @@ const BundleTicket = () => {
       originalPrice: 165000,
       bundlePrice: 155000,
       savings: 10000,
-      image: "/film/Paket8.jpg",
+      image: "/film/Paket7.jpg",
       features: [
         "4 tiket kompetisi ",
         "1 Baju ",
