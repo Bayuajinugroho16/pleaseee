@@ -298,7 +298,7 @@ const Payment = () => {
 
             {!qrImageError ? (
               <img
-                src="https://beckendflyio.vercel.app/public/images/gopay1-qr.jpg"
+                src="https://beckendflyio.vercel.app/images/gopay1-qr.jpg"
                 alt="QRIS GoPay"
                 className="qris-image"
                 onError={() => {
