@@ -35,11 +35,11 @@ const Payment = () => {
 
         console.log(
           "📤 Uploading file to:",
-          "https://beckendflyio.vercel.app/api/bookings/upload-payment"
+          "https://beckendflyio.vercel.app/api/upload-payment"
         );
 
         const response = await fetch(
-          "https://beckendflyio.vercel.app/api/bookings/upload-payment",
+          "https://beckendflyio.vercel.app/api/upload-payment",
           {
             method: "POST",
             body: formData,
