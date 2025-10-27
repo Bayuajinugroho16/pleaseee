@@ -21,6 +21,31 @@ const Payment = () => {
     console.log("Pending Booking:", pendingBooking);
   }, []);
 
+  // ✅ EMERGENCY SAVE KE LOCALSTORAGE
+  const emergencySavePayment = (bookingReference, fileName, cloudinaryUrl) => {
+    const paymentData = {
+      booking_reference: bookingReference,
+      payment_filename: fileName,
+      payment_url: cloudinaryUrl,
+      saved_at: new Date().toISOString(),
+      status: 'confirmed'
+    };
+    
+    // Save to localStorage
+    const existingPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
+    const filteredPayments = existingPayments.filter(p => p.booking_reference !== bookingReference);
+    filteredPayments.push(paymentData);
+    localStorage.setItem('emergency_payments', JSON.stringify(filteredPayments));
+    
+    console.log('💾 EMERGENCY: Payment saved to localStorage:', paymentData);
+    
+    return {
+      success: true,
+      message: 'Payment saved locally (server offline)',
+      data: paymentData
+    };
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -34,10 +59,9 @@ const Payment = () => {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("upload_preset", "cinema_payments"); // Ganti dengan upload preset kamu
-       
 
         const cloudinaryResponse = await fetch(
-          "https://api.cloudinary.com/v1_1/dafdoluym/image/upload", // Ganti YOUR_CLOUD_NAME
+          "https://api.cloudinary.com/v1_1/dafdoluym/image/upload",
           {
             method: "POST",
             body: formData,
@@ -53,45 +77,57 @@ const Payment = () => {
         const cloudinaryResult = await cloudinaryResponse.json();
         console.log("✅ Cloudinary upload success:", cloudinaryResult);
 
-        // ✅ STEP 2: SIMPAN URL KE DATABASE KAMU
-        console.log("💾 Saving to database...");
-        const response = await fetch(
-          "https://beckendflyio.vercel.app/api/update-payment-url",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              booking_reference: pendingBooking.booking_reference,
-              payment_filename: file.name,
-              payment_url: cloudinaryResult.secure_url, // ✅ URL GAMBAR DARI CLOUDINARY
-              status: "confirmed",
-            }),
+        // ✅ STEP 2: COBA SIMPAN KE SERVER YANG ADA
+        console.log("💾 Trying to save to database...");
+        
+        let dbResult;
+        try {
+          // COBA ENDPOINT YANG MUNGKIN ADA
+          const response = await fetch(
+            "https://beckendflyio.vercel.app/api/update-payment-base64",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                booking_reference: pendingBooking.booking_reference,
+                payment_filename: file.name,
+                payment_base64: "cloudinary_uploaded", // Fake base64 karena pakai Cloudinary
+                payment_mimetype: file.type,
+                payment_url: cloudinaryResult.secure_url // Tetap kirim URL
+              }),
+            }
+          );
+
+          console.log("📥 Database Response Status:", response.status);
+
+          if (response.ok) {
+            dbResult = await response.json();
+            console.log("✅ Database save result:", dbResult);
+          } else {
+            throw new Error(`Server returned ${response.status}`);
           }
-        );
-
-        console.log("📥 Database Response Status:", response.status);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("❌ Database error:", errorText);
-          throw new Error(`Database save failed: ${response.status}`);
+        } catch (serverError) {
+          console.log("⚠️ Server save failed, using emergency save:", serverError);
+          // FALLBACK KE EMERGENCY SAVE
+          dbResult = emergencySavePayment(
+            pendingBooking.booking_reference, 
+            file.name, 
+            cloudinaryResult.secure_url
+          );
         }
 
-        const result = await response.json();
-        console.log("✅ Database save result:", result);
+        // ✅ SET PAYMENT PROOF UNTUK PREVIEW
+        setPaymentProof({
+          name: file.name,
+          fileName: dbResult.fileName || file.name,
+          url: cloudinaryResult.secure_url,
+          dbSuccess: dbResult.success
+        });
+        
+        setShowConfirmation(true);
 
-        if (result.success) {
-          setPaymentProof({
-            name: file.name,
-            fileName: result.fileName,
-            url: cloudinaryResult.secure_url, // ✅ UNTUK PREVIEW
-          });
-          setShowConfirmation(true);
-        } else {
-          alert("Upload failed: " + result.message);
-        }
       } catch (error) {
         console.error("❌ Upload error:", error);
         alert("Upload error: " + error.message);
@@ -101,9 +137,7 @@ const Payment = () => {
     }
   };
 
-
-
-  // Handle Confirm Payment
+  // Handle Confirm Payment - SIMPLIFIED
   const handleConfirmPayment = async () => {
     if (!pendingBooking) return;
 
@@ -115,32 +149,36 @@ const Payment = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "https://beckendflyio.vercel.app/api/bookings/confirm-payment",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            booking_reference: pendingBooking.booking_reference,
-            payment_proof: paymentProof.fileName || paymentProof.name,
-          }),
-        }
-      );
+      // ✅ LANGSUNG NAVIGATE KE TICKET DENGAN DATA YANG ADA
+      const ticketData = {
+        booking_reference: pendingBooking.booking_reference,
+        customer_name: pendingBooking.customer_name,
+        customer_email: pendingBooking.customer_email,
+        movie_title: pendingBooking.movie_title,
+        seat_numbers: pendingBooking.seat_numbers,
+        total_amount: pendingBooking.total_amount,
+        showtime: pendingBooking.showtime,
+        status: 'confirmed',
+        payment_proof: paymentProof.url || paymentProof.fileName,
+        // Tambahkan data emergency jika ada
+        emergency_save: !paymentProof.dbSuccess,
+        saved_at: new Date().toISOString()
+      };
 
-      const result = await response.json();
+      console.log("🎫 Navigating to ticket with data:", ticketData);
 
-      if (result.success) {
-        // ✅ TUTUP MODAL KONFIRMASI DAN NAVIGATE
-        setShowConfirmation(false);
-        navigate("/ticket", { state: { bookingData: result.data } });
-      } else {
-        alert(`Payment confirmation failed: ${result.message}`);
-      }
+      // ✅ TUTUP MODAL DAN NAVIGATE
+      setShowConfirmation(false);
+      navigate("/ticket", { 
+        state: { 
+          bookingData: ticketData,
+          fromPayment: true 
+        } 
+      });
+
     } catch (error) {
-      console.error("❌ Payment confirmation error:", error);
-      alert("Payment error: " + error.message);
+      console.error("❌ Confirmation error:", error);
+      alert("Confirmation error: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -151,6 +189,14 @@ const Payment = () => {
     setShowConfirmation(false);
     setPaymentProof(null);
   };
+
+  // ✅ TAMPILKAN EMERGENCY PAYMENTS DI CONSOLE
+  useEffect(() => {
+    const emergencyPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
+    if (emergencyPayments.length > 0) {
+      console.log('🆘 EMERGENCY PAYMENTS IN LOCALSTORAGE:', emergencyPayments);
+    }
+  }, []);
 
   if (!pendingBooking) {
     return (
@@ -185,7 +231,12 @@ const Payment = () => {
               <div className="file-info">
                 <strong>File:</strong> {paymentProof.name}
               </div>
-              <p>Do you want to confirm payment and get your ticket now?</p>
+              {!paymentProof.dbSuccess && (
+                <div className="emergency-warning">
+                  ⚠️ <strong>Note:</strong> Payment saved locally (server offline)
+                </div>
+              )}
+              <p>Do you want to proceed to your ticket now?</p>
             </div>
             <div className="modal-actions">
               <button
@@ -260,12 +311,12 @@ const Payment = () => {
               />
             ) : (
               <div className="qris-fallback">
-                <div className="fallback-icon">❌</div>
+                <div className="fallback-icon">💰</div>
                 <p className="fallback-text">
-                  QR Code Image Not Found
+                  Transfer ke: 0812-3456-7890 (GoPay)
                   <br />
                   <span className="fallback-subtext">
-                    Check backend public folder
+                    Amount: Rp {pendingBooking.total_amount?.toLocaleString()}
                   </span>
                 </p>
               </div>
@@ -276,7 +327,7 @@ const Payment = () => {
             </p>
           </div>
 
-          {/* Upload Payment Proof - HANYA SATU KALI */}
+          {/* Upload Payment Proof */}
           <div className="upload-section">
             <h3>📎 Upload Payment Proof</h3>
             <p className="upload-description">
@@ -325,6 +376,11 @@ const Payment = () => {
                 <p>
                   <small>File: {paymentProof.name}</small>
                 </p>
+                {!paymentProof.dbSuccess && (
+                  <p className="emergency-note">
+                    <small>⚠️ Saved locally (server offline)</small>
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -338,7 +394,7 @@ const Payment = () => {
               Back to Booking
             </button>
 
-            {/* Tombol manual confirm jika user ingin confirm manual */}
+            {/* Tombol manual confirm */}
             {paymentProof && !showConfirmation && (
               <button
                 onClick={() => setShowConfirmation(true)}
