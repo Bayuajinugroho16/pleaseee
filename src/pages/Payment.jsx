@@ -21,64 +21,72 @@ const Payment = () => {
     console.log("Pending Booking:", pendingBooking);
   }, []);
 
- const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      console.log("📁 File Selected:", file.name);
+  const handleFileUpload = async (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    console.log("📁 File Selected:", file.name);
+    setUploading(true);
 
-      setUploading(true);
+    try {
+      // ✅ CONVERT TO BASE64
+      const base64Image = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+          const base64String = reader.result.split(',')[1];
+          resolve(base64String);
+        };
+        reader.onerror = error => reject(error);
+      });
 
-      try {
-        const formData = new FormData();
-        formData.append("payment_proof", file);
-        formData.append("booking_reference", pendingBooking.booking_reference);
+      console.log("📊 Base64 data length:", base64Image.length);
 
-        console.log(
-          "📤 Uploading file to:",
-          "https://beckendflyio.vercel.app/api/upload-payment"
-        );
-
-        const response = await fetch(
-          "https://beckendflyio.vercel.app/api/upload-payment",
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-
-        console.log("📥 Upload Response Status:", response.status);
-
-        if (!response.ok) {
-          throw new Error(`Upload failed with status: ${response.status}`);
+      // ✅ GUNAKAN ENDPOINT BARU
+      const response = await fetch(
+        "https://beckendflyio.vercel.app/api/update-payment-base64",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            booking_reference: pendingBooking.booking_reference,
+            payment_filename: file.name,
+            payment_base64: base64Image,
+            payment_mimetype: file.type
+          }),
         }
+      );
 
-        const result = await response.json();
-        console.log("✅ Upload Result:", result);
+      console.log("📥 Upload Response Status:", response.status);
 
-        if (result.success) {
-          // ✅ HAPUS filePath - GUNAKAN BASE64 DARI DATABASE
-          setPaymentProof({
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            fileName: result.fileName,
-            // filePath: result.filePath, // ❌ HAPUS INI
-          });
-          
-          // ✅ TAMPILKAN KONFIRMASI SETELAH UPLOAD BERHASIL
-          setShowConfirmation(true);
-          
-        } else {
-          alert("Upload failed: " + result.message);
-        }
-      } catch (error) {
-        console.error("❌ Upload error:", error);
-        alert("Upload error: " + error.message);
-      } finally {
-        setUploading(false);
+      if (!response.ok) {
+        throw new Error(`Upload failed with status: ${response.status}`);
       }
+
+      const result = await response.json();
+      console.log("✅ Upload Result:", result);
+
+      if (result.success) {
+        setPaymentProof({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          fileName: result.fileName,
+          base64: base64Image // ✅ UNTUK PREVIEW
+        });
+        setShowConfirmation(true);
+      } else {
+        alert("Upload failed: " + result.message);
+      }
+    } catch (error) {
+      console.error("❌ Upload error:", error);
+      alert("Upload error: " + error.message);
+    } finally {
+      setUploading(false);
     }
-  };  
+  }
+};
 
   // Handle Confirm Payment
   const handleConfirmPayment = async () => {
@@ -92,16 +100,19 @@ const Payment = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("https://beckendflyio.vercel.app/api/bookings/confirm-payment", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          booking_reference: pendingBooking.booking_reference,
-          payment_proof: paymentProof.fileName || paymentProof.name,
-        }),
-      });
+      const response = await fetch(
+        "https://beckendflyio.vercel.app/api/bookings/confirm-payment",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            booking_reference: pendingBooking.booking_reference,
+            payment_proof: paymentProof.fileName || paymentProof.name,
+          }),
+        }
+      );
 
       const result = await response.json();
 
@@ -146,7 +157,7 @@ const Payment = () => {
   return (
     <div className="payment-container">
       <Navigation />
-      
+
       {/* ✅ MODAL KONFIRMASI SETELAH UPLOAD */}
       {showConfirmation && (
         <div className="confirmation-modal-overlay">
@@ -162,14 +173,14 @@ const Payment = () => {
               <p>Do you want to confirm payment and get your ticket now?</p>
             </div>
             <div className="modal-actions">
-              <button 
+              <button
                 onClick={handleCancelConfirmation}
                 className="cancel-btn"
                 disabled={loading}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleConfirmPayment}
                 className="confirm-btn"
                 disabled={loading}
@@ -184,13 +195,17 @@ const Payment = () => {
       <div className="page-content">
         <div className="payment-content">
           <h1 className="payment-title">💳 Payment</h1>
-          
+
           {/* Order Summary */}
           <div className="order-summary-card">
             <h3>Order Summary</h3>
             <div className="order-details">
-              <p><strong>Movie:</strong> {pendingBooking.movie_title}</p>
-              <p><strong>Showtime:</strong> {pendingBooking.showtime}</p>
+              <p>
+                <strong>Movie:</strong> {pendingBooking.movie_title}
+              </p>
+              <p>
+                <strong>Showtime:</strong> {pendingBooking.showtime}
+              </p>
               <p>
                 <strong>Seats:</strong>
                 <span className="seats-list">
@@ -215,9 +230,7 @@ const Payment = () => {
           {/* QRIS GoPay */}
           <div className="qris-section">
             <h3> Bayar Sesuai Total Nominal </h3>
-            <p className="qris-description">
-              Screenshoot Untuk Scan QR Code
-            </p>
+            <p className="qris-description">Screenshoot Untuk Scan QR Code</p>
 
             {!qrImageError ? (
               <img
@@ -266,10 +279,16 @@ const Payment = () => {
               />
               <label
                 htmlFor="payment-proof"
-                className={`file-input-label ${uploading || paymentProof ? "disabled" : ""}`}
+                className={`file-input-label ${
+                  uploading || paymentProof ? "disabled" : ""
+                }`}
               >
                 <span className="icon">📁</span>
-                {uploading ? "Uploading..." : paymentProof ? "Uploaded ✓" : "Choose File"}
+                {uploading
+                  ? "Uploading..."
+                  : paymentProof
+                  ? "Uploaded ✓"
+                  : "Choose File"}
               </label>
             </div>
 
@@ -280,15 +299,17 @@ const Payment = () => {
               </div>
             )}
 
-            {paymentProof && !uploading && !showConfirmation && (
-              <div className="upload-success">
-                ✅ File uploaded: {paymentProof.name}
-                <button 
-                  onClick={() => setShowConfirmation(true)}
-                  className="proceed-btn"
-                >
-                  Proceed to Confirm
-                </button>
+            {paymentProof && paymentProof.base64 && (
+              <div className="payment-preview">
+                <h4>📷 Payment Proof Preview:</h4>
+                <img
+                  src={`data:${paymentProof.type};base64,${paymentProof.base64}`}
+                  alt="Payment Proof Preview"
+                  className="payment-preview-image"
+                />
+                <p>
+                  <small>File: {paymentProof.name}</small>
+                </p>
               </div>
             )}
           </div>
