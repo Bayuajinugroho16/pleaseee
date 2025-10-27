@@ -501,7 +501,7 @@ const BundleCheckout = () => {
   
   {!qrImageError ? (
     <img 
-      src="https://i.ibb.co/nsy-P8-S8-M/gopay1-qr.jpg"  // ✅ URL BARU DARI IMGBB
+      src="https://beckendflyio.vercel.app/public/images/gopay1-qr.jpg"  // ✅ URL BARU DARI IMGBB
       alt="QRIS GoPay" 
       className="qris-image"
       onError={() => {
