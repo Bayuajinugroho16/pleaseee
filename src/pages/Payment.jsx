@@ -21,186 +21,87 @@ const Payment = () => {
     console.log("Pending Booking:", pendingBooking);
   }, []);
 
-const handleFileUpload = async (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    console.log("📁 Original File:", file.name, "Size:", (file.size / 1024).toFixed(2), "KB");
-    setUploading(true);
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      console.log("📁 File Selected:", file.name);
+      setUploading(true);
 
-    try {
-      // ✅ COMPRESS IMAGE AGGRESSIVELY - MAX 80KB (SAFE MARGIN)
-      console.log("🔧 Aggressive compression to under 80KB...");
-      const compressedFile = await compressImageAggressive(file);
-      
-      console.log("📊 After compression:", (compressedFile.size / 1024).toFixed(2), "KB");
+      try {
+        // ✅ STEP 1: UPLOAD KE CLOUDINARY
+        console.log("☁️ Uploading to Cloudinary...");
 
-      // ✅ CONVERT TO BASE64
-      const base64Image = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(compressedFile);
-        reader.onload = () => {
-          const base64String = reader.result.split(',')[1];
-          resolve(base64String);
-        };
-        reader.onerror = error => reject(error);
-      });
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", "cinema_payments"); // Ganti dengan upload preset kamu
+       
 
-      console.log("📊 Base64 length:", base64Image.length, "characters");
-
-      // ✅ GUNAKAN ENDPOINT BARU
-      const response = await fetch(
-        "https://beckendflyio.vercel.app/api/update-payment-base64",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            booking_reference: pendingBooking.booking_reference,
-            payment_filename: compressedFile.name,
-            payment_base64: base64Image,
-            payment_mimetype: compressedFile.type
-          }),
-        }
-      );
-
-      console.log("📥 Upload Response Status:", response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ Server response:", errorText);
-        throw new Error(`Upload failed with status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log("✅ Upload Result:", result);
-
-      if (result.success) {
-        setPaymentProof({
-          name: compressedFile.name,
-          type: compressedFile.type,
-          size: compressedFile.size,
-          fileName: result.fileName,
-          base64: base64Image
-        });
-        setShowConfirmation(true);
-      } else {
-        alert("Upload failed: " + result.message);
-      }
-    } catch (error) {
-      console.error("❌ Upload error:", error);
-      alert("Upload error: " + error.message);
-    } finally {
-      setUploading(false);
-    }
-  }
-};
-
-// ✅ AGGRESSIVE COMPRESSION FUNCTION
-const compressImageAggressive = (file) => {
-  return new Promise((resolve, reject) => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    
-    img.onload = function() {
-      // Start with small dimensions
-      let width = Math.min(img.width, 600);
-      let height = Math.min(img.height, 600);
-      let quality = 0.6; // Start with lower quality
-      
-      canvas.width = width;
-      canvas.height = height;
-      
-      // Draw image with new dimensions
-      ctx.drawImage(img, 0, 0, width, height);
-      
-      // Try multiple compression levels
-      const tryCompression = (currentQuality) => {
-        canvas.toBlob(
-          (blob) => {
-            const sizeKB = blob.size / 1024;
-            console.log(`🔄 Compression attempt: ${sizeKB.toFixed(2)}KB, Quality: ${currentQuality}`);
-            
-            if (sizeKB > 80 && currentQuality > 0.3) {
-              // Reduce quality further
-              tryCompression(currentQuality - 0.1);
-            } else if (sizeKB > 80 && width > 300) {
-              // Reduce dimensions if quality is already low
-              width = Math.round(width * 0.8);
-              height = Math.round(height * 0.8);
-              canvas.width = width;
-              canvas.height = height;
-              ctx.drawImage(img, 0, 0, width, height);
-              tryCompression(0.5);
-            } else {
-              const compressedFile = new File([blob], `payment-${Date.now()}.jpg`, {
-                type: 'image/jpeg',
-                lastModified: Date.now(),
-              });
-              console.log(`✅ Final: ${sizeKB.toFixed(2)}KB, ${width}x${height}, Quality: ${currentQuality}`);
-              resolve(compressedFile);
-            }
-          },
-          'image/jpeg',
-          currentQuality
+        const cloudinaryResponse = await fetch(
+          "https://api.cloudinary.com/v1_1/dafdoluym/image/upload", // Ganti YOUR_CLOUD_NAME
+          {
+            method: "POST",
+            body: formData,
+          }
         );
-      };
-      
-      tryCompression(quality);
-    };
-    
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
-  });
-};
 
-// ✅ COMPRESS IMAGE FUNCTION
-const compressImage = (file) => {
-  return new Promise((resolve) => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    
-    img.onload = () => {
-      // Set max dimensions
-      const MAX_WIDTH = 1200;
-      const MAX_HEIGHT = 1200;
-      
-      let { width, height } = img;
-      
-      // Calculate new dimensions maintaining aspect ratio
-      if (width > height) {
-        if (width > MAX_WIDTH) {
-          height = Math.round((height * MAX_WIDTH) / width);
-          width = MAX_WIDTH;
+        if (!cloudinaryResponse.ok) {
+          throw new Error(
+            `Cloudinary upload failed: ${cloudinaryResponse.status}`
+          );
         }
-      } else {
-        if (height > MAX_HEIGHT) {
-          width = Math.round((width * MAX_HEIGHT) / height);
-          height = MAX_HEIGHT;
+
+        const cloudinaryResult = await cloudinaryResponse.json();
+        console.log("✅ Cloudinary upload success:", cloudinaryResult);
+
+        // ✅ STEP 2: SIMPAN URL KE DATABASE KAMU
+        console.log("💾 Saving to database...");
+        const response = await fetch(
+          "https://beckendflyio.vercel.app/api/update-payment-url",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              booking_reference: pendingBooking.booking_reference,
+              payment_filename: file.name,
+              payment_url: cloudinaryResult.secure_url, // ✅ URL GAMBAR DARI CLOUDINARY
+              status: "confirmed",
+            }),
+          }
+        );
+
+        console.log("📥 Database Response Status:", response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("❌ Database error:", errorText);
+          throw new Error(`Database save failed: ${response.status}`);
         }
+
+        const result = await response.json();
+        console.log("✅ Database save result:", result);
+
+        if (result.success) {
+          setPaymentProof({
+            name: file.name,
+            fileName: result.fileName,
+            url: cloudinaryResult.secure_url, // ✅ UNTUK PREVIEW
+          });
+          setShowConfirmation(true);
+        } else {
+          alert("Upload failed: " + result.message);
+        }
+      } catch (error) {
+        console.error("❌ Upload error:", error);
+        alert("Upload error: " + error.message);
+      } finally {
+        setUploading(false);
       }
-      
-      canvas.width = width;
-      canvas.height = height;
-      
-      // Draw image with new dimensions
-      ctx.drawImage(img, 0, 0, width, height);
-      
-      // Convert to JPEG with quality 0.8 (80%)
-      canvas.toBlob((blob) => {
-        const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
-          type: 'image/jpeg',
-          lastModified: Date.now(),
-        });
-        resolve(compressedFile);
-      }, 'image/jpeg', 0.8);
-    };
-    
-    img.src = URL.createObjectURL(file);
-  });
-};
+    }
+  };
+
+
 
   // Handle Confirm Payment
   const handleConfirmPayment = async () => {
@@ -413,12 +314,12 @@ const compressImage = (file) => {
               </div>
             )}
 
-            {paymentProof && paymentProof.base64 && (
+            {paymentProof && paymentProof.url && (
               <div className="payment-preview">
                 <h4>📷 Payment Proof Preview:</h4>
                 <img
-                  src={`data:${paymentProof.type};base64,${paymentProof.base64}`}
-                  alt="Payment Proof Preview"
+                  src={paymentProof.url}
+                  alt="Payment Proof"
                   className="payment-preview-image"
                 />
                 <p>
