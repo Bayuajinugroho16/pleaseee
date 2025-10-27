@@ -21,141 +21,83 @@ const Payment = () => {
     console.log("Pending Booking:", pendingBooking);
   }, []);
 
- const handleFileUpload = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      console.log("📁 File Selected:", file.name);
 
-  console.log("📁 File Selected:", file.name);
-  setUploading(true);
+      setUploading(true);
 
-  try {
-    // ✅ GUNAKAN ENDPOINT YANG SUDAH ADA
-    console.log("🔄 Using FormData upload...");
+      try {
+        // ✅ CONVERT FILE TO BASE64 (SEPERTI BUNDLE CHECKOUT)
+        const base64Image = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => {
+            // Remove "data:image/jpeg;base64," prefix
+            const base64String = reader.result.split(",")[1];
+            resolve(base64String);
+          };
+          reader.onerror = (error) => reject(error);
+        });
 
-    const formData = new FormData();
-    formData.append("payment_proof", file);
-    formData.append("booking_reference", pendingBooking.booking_reference);
+        console.log("📊 Base64 data length:", base64Image.length);
 
-    const response = await fetch(
-      "https://beckendflyio.vercel.app/api/upload-payment",
-      {
-        method: "POST",
-        body: formData,
+        // ✅ SIMPAN BASE64 KE DATABASE (TANPA FORMData)
+        const response = await fetch(
+          "https://beckendflyio.vercel.app/api/update-payment-base64",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              booking_reference: pendingBooking.booking_reference,
+              payment_filename: file.name,
+              payment_base64: base64Image,
+              payment_mimetype: file.type,
+            }),
+          }
+        );
+
+        console.log("📥 Upload Response Status:", response.status);
+
+        if (!response.ok) {
+          throw new Error(`Upload failed with status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("✅ Upload Result:", result);
+
+        if (result.success) {
+          // ✅ SIMPAN DATA UNTUK PREVIEW & KONFIRMASI
+          setPaymentProof({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            fileName: result.fileName,
+            base64: base64Image, // ✅ SIMPAN BASE64 UNTUK PREVIEW
+          });
+
+          // ✅ TAMPILKAN KONFIRMASI
+          setShowConfirmation(true);
+        } else {
+          alert("Upload failed: " + result.message);
+        }
+      } catch (error) {
+        console.error("❌ Upload error:", error);
+        alert("Upload error: " + error.message);
+      } finally {
+        setUploading(false);
       }
-    );
-
-    console.log("📤 Server response status:", response.status);
-
-    if (response.ok) {
-      const result = await response.json();
-      console.log("✅ Upload successful:", result);
-      
-      // Set payment proof untuk preview
-      const base64Image = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.readAsDataURL(file);
-      });
-
-      setPaymentProof({
-        name: file.name,
-        fileName: result.fileName,
-        url: base64Image,
-        dbSuccess: true
-      });
-      
-      setShowConfirmation(true);
-    } else {
-      const errorText = await response.text();
-      console.error("❌ Upload failed:", errorText);
-      throw new Error(`Upload failed: ${response.status}`);
-    }
-
-  } catch (error) {
-    console.error("❌ Upload error:", error);
-    
-    // ✅ FALLBACK - BASE64 KE LOCALSTORAGE
-    console.log("⚠️ Server upload failed, using base64 fallback...");
-    try {
-      const base64Image = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      const ticketData = {
-        booking_reference: pendingBooking.booking_reference,
-        customer_name: pendingBooking.customer_name,
-        customer_email: pendingBooking.customer_email,
-        movie_title: pendingBooking.movie_title,
-        seat_numbers: pendingBooking.seat_numbers,
-        total_amount: pendingBooking.total_amount,
-        showtime: pendingBooking.showtime,
-        status: 'confirmed',
-        payment_proof: base64Image,
-        payment_filename: file.name,
-        saved_at: new Date().toISOString(),
-        upload_method: 'base64_fallback'
-      };
-
-      // Simpan ke localStorage
-      localStorage.setItem('recent_booking', JSON.stringify(ticketData));
-      
-      const emergencyPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
-      const filteredPayments = emergencyPayments.filter(p => 
-        p.booking_reference !== pendingBooking.booking_reference
-      );
-      filteredPayments.push(ticketData);
-      localStorage.setItem('emergency_payments', JSON.stringify(filteredPayments));
-
-      setPaymentProof({
-        name: file.name,
-        fileName: file.name,
-        url: base64Image,
-        uploadMethod: 'base64'
-      });
-      
-      setShowConfirmation(true);
-      
-    } catch (fallbackError) {
-      console.error("❌ Base64 fallback also failed:", fallbackError);
-      alert("Upload completed locally! Your payment proof is saved in browser.");
-    }
-  } finally {
-    setUploading(false);
-  }
-};
-
-  // ✅ CLEANUP LOCALSTORAGE
-  const cleanupLocalStorage = () => {
-    try {
-      const emergencyPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
-      if (emergencyPayments.length > 3) {
-        const recentPayments = emergencyPayments.slice(-3);
-        localStorage.setItem('emergency_payments', JSON.stringify(recentPayments));
-      }
-    } catch (error) {
-      console.log('⚠️ Cleanup warning:', error.message);
     }
   };
 
-  // ✅ UPDATE EMERGENCY PAYMENTS
-  const updateEmergencyPayments = (newPayment) => {
-    try {
-      const emergencyPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
-      const filteredPayments = emergencyPayments.filter(p => p.booking_reference !== newPayment.booking_reference);
-      filteredPayments.push(newPayment);
-      const recentPayments = filteredPayments.slice(-5);
-      localStorage.setItem('emergency_payments', JSON.stringify(recentPayments));
-    } catch (error) {
-      console.log('⚠️ Update emergency payments failed:', error.message);
-    }
-  };
-
-  // ✅ HANDLE CONFIRM PAYMENT
+  // Handle Confirm Payment
   const handleConfirmPayment = async () => {
-    if (!pendingBooking || !paymentProof) {
+    if (!pendingBooking) return;
+
+    if (!paymentProof) {
       alert("Please upload payment proof first!");
       return;
     }
@@ -163,34 +105,32 @@ const Payment = () => {
     setLoading(true);
 
     try {
-      // ✅ LANGSUNG NAVIGATE KE TICKET
-      const ticketData = {
-        booking_reference: pendingBooking.booking_reference,
-        customer_name: pendingBooking.customer_name,
-        customer_email: pendingBooking.customer_email,
-        movie_title: pendingBooking.movie_title,
-        seat_numbers: pendingBooking.seat_numbers,
-        total_amount: pendingBooking.total_amount,
-        showtime: pendingBooking.showtime,
-        status: 'confirmed',
-        payment_proof: paymentProof.url,
-        emergency_save: !paymentProof.dbSuccess,
-        saved_at: new Date().toISOString()
-      };
+      const response = await fetch(
+        "https://beckendflyio.vercel.app/api/bookings/confirm-payment",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            booking_reference: pendingBooking.booking_reference,
+            payment_proof: paymentProof.fileName || paymentProof.name,
+          }),
+        }
+      );
 
-      console.log("🎫 Navigating to ticket with data:", ticketData);
+      const result = await response.json();
 
-      setShowConfirmation(false);
-      navigate("/ticket", { 
-        state: { 
-          bookingData: ticketData,
-          fromPayment: true 
-        } 
-      });
-
+      if (result.success) {
+        // ✅ TUTUP MODAL KONFIRMASI DAN NAVIGATE
+        setShowConfirmation(false);
+        navigate("/ticket", { state: { bookingData: result.data } });
+      } else {
+        alert(`Payment confirmation failed: ${result.message}`);
+      }
     } catch (error) {
-      console.error("❌ Confirmation error:", error);
-      alert("Confirmation error: " + error.message);
+      console.error("❌ Payment confirmation error:", error);
+      alert("Payment error: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -235,12 +175,7 @@ const Payment = () => {
               <div className="file-info">
                 <strong>File:</strong> {paymentProof.name}
               </div>
-              {!paymentProof.dbSuccess && (
-                <div className="emergency-warning">
-                  ⚠️ <strong>Note:</strong> Payment saved locally (server offline)
-                </div>
-              )}
-              <p>Do you want to proceed to your ticket now?</p>
+              <p>Do you want to confirm payment and get your ticket now?</p>
             </div>
             <div className="modal-actions">
               <button
@@ -300,7 +235,7 @@ const Payment = () => {
           {/* QRIS GoPay */}
           <div className="qris-section">
             <h3> Bayar Sesuai Total Nominal </h3>
-            <p className="qris-description">Screenshot Untuk Scan QR Code</p>
+            <p className="qris-description">Screenshoot Untuk Scan QR Code</p>
 
             {!qrImageError ? (
               <img
@@ -315,12 +250,12 @@ const Payment = () => {
               />
             ) : (
               <div className="qris-fallback">
-                <div className="fallback-icon">💰</div>
+                <div className="fallback-icon">❌</div>
                 <p className="fallback-text">
-                  Transfer ke: 0812-3456-7890 (GoPay)
+                  QR Code Image Not Found
                   <br />
                   <span className="fallback-subtext">
-                    Amount: Rp {pendingBooking.total_amount?.toLocaleString()}
+                    Check backend public folder
                   </span>
                 </p>
               </div>
@@ -331,18 +266,18 @@ const Payment = () => {
             </p>
           </div>
 
-          {/* Upload Payment Proof - SIMPLE BASE64 */}
+          {/* Upload Payment Proof - HANYA SATU KALI */}
           <div className="upload-section">
             <h3>📎 Upload Payment Proof</h3>
             <p className="upload-description">
-              Upload screenshot of your successful payment (JPG, PNG)
+              Upload screenshot of your successful payment (JPG, PNG, PDF)
             </p>
 
             <div className="file-input-container">
               <input
                 type="file"
                 id="payment-proof"
-                accept="image/*,.jpg,.jpeg,.png"
+                accept="image/*,.pdf,.jpg,.jpeg,.png"
                 onChange={handleFileUpload}
                 disabled={uploading || paymentProof}
                 className="file-input"
@@ -365,26 +300,21 @@ const Payment = () => {
             {uploading && (
               <div className="uploading-text">
                 <div className="loading-spinner-small"></div>
-                Processing your payment proof...
+                Uploading your payment proof...
               </div>
             )}
 
-            {paymentProof && paymentProof.url && (
+            {paymentProof && paymentProof.base64 && (
               <div className="payment-preview">
                 <h4>📷 Payment Proof Preview:</h4>
                 <img
-                  src={paymentProof.url}
-                  alt="Payment Proof"
+                  src={`data:${paymentProof.type};base64,${paymentProof.base64}`}
+                  alt="Payment Proof Preview"
                   className="payment-preview-image"
                 />
                 <p>
                   <small>File: {paymentProof.name}</small>
                 </p>
-                {!paymentProof.dbSuccess && (
-                  <p className="emergency-note">
-                    <small>⚠️ Saved locally (server offline)</small>
-                  </p>
-                )}
               </div>
             )}
           </div>
@@ -398,6 +328,7 @@ const Payment = () => {
               Back to Booking
             </button>
 
+            {/* Tombol manual confirm jika user ingin confirm manual */}
             {paymentProof && !showConfirmation && (
               <button
                 onClick={() => setShowConfirmation(true)}
