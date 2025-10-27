@@ -1,6 +1,6 @@
-// Di file MyTickets.js - Tambahkan emergency system
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import Navigation from '../components/Navigation';
 import './MyTickets.css';
 
 const MyTickets = () => {
@@ -23,13 +23,13 @@ const MyTickets = () => {
       return userTickets.map(payment => ({
         id: `emergency_${payment.booking_reference}`,
         booking_reference: payment.booking_reference,
-        movie_title: 'Movie (Emergency)',
-        seat_numbers: ['A1'], // Default seat
-        total_amount: 0,
+        movie_title: payment.movie_title || 'Movie (Emergency)',
+        seat_numbers: payment.seat_numbers || ['A1'],
+        total_amount: payment.total_amount || 0,
         status: 'confirmed',
-        payment_proof: payment.payment_url,
+        payment_proof: payment.payment_proof || payment.payment_url,
         payment_filename: payment.payment_filename,
-        booking_date: payment.saved_at,
+        booking_date: payment.saved_at || payment.booking_date,
         is_emergency: true
       }));
     } catch (error) {
@@ -50,7 +50,7 @@ const MyTickets = () => {
           seat_numbers: recentBooking.seat_numbers || ['A1'],
           total_amount: recentBooking.total_amount || 0,
           status: 'confirmed',
-          booking_date: new Date().toISOString(),
+          booking_date: recentBooking.saved_at || new Date().toISOString(),
           is_mock: true
         }];
       }
@@ -60,70 +60,105 @@ const MyTickets = () => {
     return [];
   };
 
-  useEffect(() => {
-    const fetchTickets = async () => {
-      if (!user?.username) {
-        setLoading(false);
-        return;
-      }
+  // ✅ FIXED: Fetch tickets dengan error handling yang better
+  const fetchTickets = async () => {
+    if (!user?.username) {
+      setLoading(false);
+      return;
+    }
 
+    try {
+      console.log(`🎫 Fetching tickets for username: ${user.username}`);
+      
+      let serverTickets = [];
+      
+      // ✅ COBA DARI SERVER DULU
       try {
-        console.log(`🎫 Fetching tickets for username: ${user.username}`);
+        const response = await fetch(
+          `https://beckendflyio.vercel.app/api/bookings/my-bookings?username=${user.username}`
+        );
         
-        // ✅ COBA DARI SERVER DULU
-        try {
-          const response = await fetch(
-            `https://beckendflyio.vercel.app/api/bookings/my-bookings?username=${user.username}`
-          );
-          
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success) {
-              console.log('✅ Server tickets:', result.data);
-              setTickets(result.data);
-              setLoading(false);
-              return;
-            }
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            console.log('✅ Server tickets:', result.data);
+            serverTickets = result.data;
           }
-        } catch (serverError) {
-          console.log('⚠️ Server fetch failed, using emergency data');
         }
-
-        // ✅ JIKA SERVER ERROR, GUNAKAN EMERGENCY DATA
-        const emergencyTickets = getEmergencyTickets();
-        const mockTickets = createMockTicketFromBooking();
-        
-        const allTickets = [...emergencyTickets, ...mockTickets];
-        
-        console.log('📊 All tickets for user:', user.username, 'Total:', allTickets.length);
-        console.log('🔍 USER TICKETS BREAKDOWN:', allTickets);
-        
-        setTickets(allTickets);
-        
-      } catch (error) {
-        console.error('❌ Fetch tickets error:', error);
-        setError('Failed to load tickets');
-      } finally {
-        setLoading(false);
+      } catch (serverError) {
+        console.log('⚠️ Server fetch failed, using emergency data:', serverError.message);
       }
-    };
 
+      // ✅ JIKA SERVER ERROR ATAU TIDAK ADA DATA, GUNAKAN EMERGENCY DATA
+      const emergencyTickets = getEmergencyTickets();
+      const mockTickets = createMockTicketFromBooking();
+      
+      const allTickets = [...serverTickets, ...emergencyTickets, ...mockTickets];
+      
+      console.log('📊 All tickets for user:', user.username, 'Total:', allTickets.length);
+      console.log('🔍 USER TICKETS BREAKDOWN:', allTickets);
+      
+      setTickets(allTickets);
+      
+    } catch (error) {
+      console.error('❌ Fetch tickets error:', error);
+      setError('Failed to load tickets');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchTickets();
   }, [user]);
 
-  // ✅ SIMPAN DATA BOOKING TERAKHIR UNTUK EMERGENCY
-  useEffect(() => {
-    // Listen untuk navigation dari payment page
-    const handleStorageChange = () => {
-      const recentBooking = JSON.parse(localStorage.getItem('recent_booking') || 'null');
-      if (recentBooking) {
-        console.log('📝 Recent booking detected:', recentBooking);
-      }
-    };
+  // ✅ FIXED: Remove problematic event listener yang menyebabkan "Illegal constructor"
+  // Hapus useEffect untuk storage event listener jika tidak diperlukan
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  // ✅ Handle View Ticket
+  const handleViewTicket = (ticket) => {
+    console.log('🎫 Viewing ticket:', ticket);
+    
+    // Navigate ke ticket detail page atau show modal
+    if (ticket.is_emergency || ticket.is_mock) {
+      // Untuk emergency tickets, tampilkan alert dengan info
+      alert(`Emergency Ticket\nBooking Ref: ${ticket.booking_reference}\nMovie: ${ticket.movie_title}\nPlease contact admin for full ticket details.`);
+    } else {
+      // Untuk regular tickets, navigate ke ticket page
+      // navigate(`/ticket/${ticket.booking_reference}`);
+      alert(`Ticket: ${ticket.movie_title}\nSeats: ${ticket.seat_numbers?.join(', ')}`);
+    }
+  };
+
+  // ✅ Handle Recovery
+  const handleRecovery = (ticket) => {
+    try {
+      // Simpan data untuk recovery
+      localStorage.setItem('recovery_ticket', JSON.stringify(ticket));
+      
+      // Buat text untuk copy
+      const recoveryText = `
+TICKET RECOVERY DATA
+Booking Reference: ${ticket.booking_reference}
+Movie: ${ticket.movie_title}
+Seats: ${ticket.seat_numbers?.join(', ')}
+Amount: Rp ${ticket.total_amount?.toLocaleString()}
+Status: ${ticket.status}
+Contact admin with this information.
+      `.trim();
+      
+      // Copy ke clipboard
+      navigator.clipboard.writeText(recoveryText).then(() => {
+        alert('✅ Ticket data copied to clipboard! Contact admin with this information.');
+      }).catch(() => {
+        alert('✅ Ticket data saved for recovery. Contact admin with booking reference: ' + ticket.booking_reference);
+      });
+      
+    } catch (error) {
+      console.error('❌ Recovery error:', error);
+      alert('Recovery failed: ' + error.message);
+    }
+  };
 
   if (loading) {
     return (
@@ -151,12 +186,12 @@ const MyTickets = () => {
         )}
 
         {/* ✅ EMERGENCY WARNING */}
-        {tickets.some(ticket => ticket.is_emergency || ticket.is_mock) && (
+        {(tickets.some(ticket => ticket.is_emergency || ticket.is_mock) && tickets.length > 0) && (
           <div className="emergency-warning-banner">
             <div className="warning-icon">⚠️</div>
             <div className="warning-content">
-              <strong>Emergency Mode</strong>
-              <p>Some tickets are loaded from local storage because server is unavailable.</p>
+              <strong>Emergency Mode Active</strong>
+              <p>Some tickets are loaded from local storage. Server connection issues detected.</p>
             </div>
           </div>
         )}
@@ -179,7 +214,7 @@ const MyTickets = () => {
               <div key={ticket.id} className="ticket-card">
                 <div className="ticket-header">
                   <h3>{ticket.movie_title}</h3>
-                  <span className={`status-badge ${ticket.status}`}>
+                  <span className={`status-badge ${ticket.status} ${ticket.is_emergency ? 'emergency' : ''} ${ticket.is_mock ? 'mock' : ''}`}>
                     {ticket.status}
                     {(ticket.is_emergency || ticket.is_mock) && ' ⚠️'}
                   </span>
@@ -196,7 +231,7 @@ const MyTickets = () => {
                     <span className="value seats">
                       {Array.isArray(ticket.seat_numbers) 
                         ? ticket.seat_numbers.join(', ')
-                        : ticket.seat_numbers}
+                        : ticket.seat_numbers || 'Not specified'}
                     </span>
                   </div>
                   
@@ -210,7 +245,9 @@ const MyTickets = () => {
                   <div className="detail-row">
                     <span className="label">Booking Date:</span>
                     <span className="value">
-                      {new Date(ticket.booking_date).toLocaleDateString()}
+                      {ticket.booking_date 
+                        ? new Date(ticket.booking_date).toLocaleDateString('id-ID')
+                        : 'Unknown date'}
                     </span>
                   </div>
                 </div>
@@ -223,13 +260,17 @@ const MyTickets = () => {
                       src={ticket.payment_proof} 
                       alt="Payment Proof" 
                       className="payment-proof-image"
+                      onError={(e) => {
+                        console.log('❌ Payment proof image failed to load');
+                        e.target.style.display = 'none';
+                      }}
                     />
                   </div>
                 )}
 
                 <div className="ticket-actions">
                   <button 
-                    onClick={() => {/* View ticket details */}}
+                    onClick={() => handleViewTicket(ticket)}
                     className="view-ticket-btn"
                   >
                     View Ticket
@@ -237,17 +278,20 @@ const MyTickets = () => {
                   
                   {(ticket.is_emergency || ticket.is_mock) && (
                     <button 
-                      onClick={() => {
-                        // Simpan data untuk recovery
-                        localStorage.setItem('recovery_ticket', JSON.stringify(ticket));
-                        alert('Ticket data saved for recovery. Contact admin with booking reference: ' + ticket.booking_reference);
-                      }}
+                      onClick={() => handleRecovery(ticket)}
                       className="recovery-btn"
                     >
                       Save for Recovery
                     </button>
                   )}
                 </div>
+
+                {/* ✅ TAMPILKAN EMERGENCY NOTE */}
+                {(ticket.is_emergency || ticket.is_mock) && (
+                  <div className="emergency-note">
+                    <small>⚠️ This ticket was saved locally due to server issues</small>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -255,13 +299,13 @@ const MyTickets = () => {
 
         {/* ✅ EMERGENCY INSTRUCTIONS */}
         <div className="emergency-info">
-          <h4>⚠️ Server Issues Detected</h4>
+          <h4>⚠️ Server Connection Issues</h4>
           <p>If your tickets are not showing correctly:</p>
           <ul>
-            <li>Check your internet connection</li>
-            <li>Try refreshing the page</li>
-            <li>Contact support with your booking reference</li>
-            <li>Recent bookings may be saved locally</li>
+            <li>Recent bookings are saved locally in your browser</li>
+            <li>Use "Save for Recovery" to backup ticket data</li>
+            <li>Contact support with your booking reference if needed</li>
+            <li>Try refreshing the page to reconnect to server</li>
           </ul>
         </div>
       </div>
