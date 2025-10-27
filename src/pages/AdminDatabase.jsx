@@ -9,6 +9,10 @@ const AdminDatabase = () => {
   const [bundleOrders, setBundleOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [paymentImage, setPaymentImage] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [imageLoading, setImageLoading] = useState(false);
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
@@ -34,7 +38,7 @@ const AdminDatabase = () => {
       
       // ✅ FETCH REGULAR BOOKINGS DAN BUNDLE ORDERS SECARA PARALEL
       const [bookingsResponse, bundleOrdersResponse] = await Promise.all([
-        fetch('https://beckendflyio.vercel.app/api/bookings', {
+        fetch('https://beckendflyio.vercel.app/api/admin/all-bookings', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -83,6 +87,71 @@ const AdminDatabase = () => {
     }
   };
 
+  // ✅ VIEW PAYMENT PROOF - BASE64 IMAGES
+  const viewPaymentProof = async (booking) => {
+    setSelectedBooking(booking);
+    setShowPaymentModal(true);
+    setPaymentImage(null);
+    setImageLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `https://beckendflyio.vercel.app/api/admin/payment-proof/${booking.booking_reference}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setPaymentImage(result.data.image_data);
+        console.log('✅ Payment proof loaded for:', booking.booking_reference);
+      } else {
+        console.log('❌ No payment proof:', result.message);
+        setPaymentImage('not_found');
+      }
+    } catch (error) {
+      console.error('Error viewing payment proof:', error);
+      setPaymentImage('error');
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
+  // ✅ UPDATE BOOKING STATUS
+  const updateBookingStatus = async (bookingReference, newStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `https://beckendflyio.vercel.app/api/admin/bookings/${bookingReference}/status`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: newStatus })
+        }
+      );
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert('✅ Status updated successfully');
+        fetchAllData(); // Refresh data
+      } else {
+        alert('❌ Failed to update status: ' + result.message);
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('❌ Error updating status');
+    }
+  };
+
   // ✅ GABUNGKAN DATA REGULAR BOOKINGS DAN BUNDLE ORDERS
   const getAllOrders = () => {
     const regularBookings = bookings.map(booking => ({
@@ -93,7 +162,7 @@ const AdminDatabase = () => {
       display_customer: booking.customer_name,
       display_amount: booking.total_amount,
       display_status: booking.status,
-      display_proof: booking.payment_proof,
+      has_payment_image: booking.has_payment_image || booking.payment_base64,
       display_date: booking.booking_date
     }));
 
@@ -105,7 +174,7 @@ const AdminDatabase = () => {
       display_customer: order.customer_name,
       display_amount: order.total_amount || order.total_price,
       display_status: order.status,
-      display_proof: order.payment_proof,
+      has_payment_image: order.has_payment_image,
       display_date: order.order_date || order.booking_date
     }));
 
@@ -115,29 +184,6 @@ const AdminDatabase = () => {
   };
 
   const allOrders = getAllOrders();
-
-  const fetchUploadedPayments = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch('https://beckendflyio.vercel.app/api/bookings/uploaded-payments', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        console.log('💰 Uploaded payments:', result.data);
-        alert(`Found ${result.data.length} payments with proof`);
-      } else {
-        alert('Error: ' + result.message);
-      }
-    } catch (error) {
-      alert('Error: ' + error.message);
-    }
-  };
 
   // ✅ JIKA BUKAN ADMIN, TAMPILKAN ACCESS DENIED
   if (!isAdmin) {
@@ -171,6 +217,77 @@ const AdminDatabase = () => {
     <div className="admin-container">
       <Navigation />
       
+      {/* ✅ PAYMENT PROOF MODAL */}
+      {showPaymentModal && (
+        <div className="modal-overlay">
+          <div className="payment-modal">
+            <div className="modal-header">
+              <h3>💰 Payment Proof - {selectedBooking?.booking_reference}</h3>
+              <button 
+                onClick={() => setShowPaymentModal(false)}
+                className="close-btn"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="modal-content">
+              <div className="booking-info">
+                <p><strong>Customer:</strong> {selectedBooking?.customer_name}</p>
+                <p><strong>Movie:</strong> {selectedBooking?.movie_title}</p>
+                <p><strong>Amount:</strong> Rp {selectedBooking?.total_amount?.toLocaleString()}</p>
+                <p><strong>Status:</strong> {selectedBooking?.status}</p>
+              </div>
+
+              {imageLoading ? (
+                <div className="image-loading">
+                  <div className="spinner"></div>
+                  <p>Loading payment proof...</p>
+                </div>
+              ) : paymentImage === 'not_found' ? (
+                <div className="no-payment-proof">
+                  <div className="no-proof-icon">❌</div>
+                  <h4>No Payment Proof Found</h4>
+                  <p>This booking doesn't have a payment proof image.</p>
+                </div>
+              ) : paymentImage === 'error' ? (
+                <div className="error-payment">
+                  <div className="error-icon">⚠️</div>
+                  <h4>Error Loading Image</h4>
+                  <p>Failed to load payment proof. Please try again.</p>
+                </div>
+              ) : paymentImage ? (
+                <div className="payment-image-container">
+                  <img 
+                    src={paymentImage} 
+                    alt="Payment Proof" 
+                    className="payment-image"
+                    onError={() => setPaymentImage('error')}
+                  />
+                  <div className="image-actions">
+                    <button 
+                      onClick={() => window.open(paymentImage, '_blank')}
+                      className="open-full-btn"
+                    >
+                      🔍 Open Full Size
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="modal-actions">
+              <button 
+                onClick={() => setShowPaymentModal(false)}
+                className="close-modal-btn"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="admin-content">
         <div className="admin-header">
           <h1>🗃️ Database Viewer</h1>
@@ -183,8 +300,11 @@ const AdminDatabase = () => {
           <button onClick={fetchAllData} className="refresh-btn">
             🔄 Refresh All Data
           </button>
-          <button onClick={fetchUploadedPayments} className="payment-btn">
-            💰 Check Payment Proofs
+          <button 
+            onClick={() => alert(`Total orders with payment proof: ${allOrders.filter(order => order.has_payment_image).length}`)}
+            className="payment-btn"
+          >
+            💰 Check Payment Proofs ({allOrders.filter(order => order.has_payment_image).length})
           </button>
         </div>
 
@@ -209,7 +329,7 @@ const AdminDatabase = () => {
           </div>
           <div className="stat-card">
             <h3>With Payment Proof</h3>
-            <p>{allOrders.filter(order => order.display_proof).length}</p>
+            <p>{allOrders.filter(order => order.has_payment_image).length}</p>
           </div>
           <div className="stat-card">
             <h3>Confirmed</h3>
@@ -236,6 +356,7 @@ const AdminDatabase = () => {
                   <th>Amount</th>
                   <th>Status</th>
                   <th>Payment Proof</th>
+                  <th>Actions</th>
                   <th>Date</th>
                 </tr>
               </thead>
@@ -263,23 +384,29 @@ const AdminDatabase = () => {
                       </span>
                     </td>
                     <td>
-                      {order.display_proof ? (
-                        <div className="proof-cell">
-                          <span className="proof-name">{order.display_proof}</span>
-                          <a 
-                            href={`https://beckendflyio.vercel.app/uploads/payments/${order.display_proof}`}
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="view-proof"
-                          >
-                            👁️ View
-                          </a>
-                        </div>
+                      {order.has_payment_image ? (
+                        <button 
+                          onClick={() => viewPaymentProof(order)}
+                          className="view-proof-btn"
+                        >
+                          👁️ View Proof
+                        </button>
                       ) : (
                         <span className="no-proof">❌ No proof</span>
                       )}
                     </td>
-                    <td>{new Date(order.display_date).toLocaleDateString()}</td>
+                    <td>
+                      <select 
+                        value={order.display_status}
+                        onChange={(e) => updateBookingStatus(order.display_reference, e.target.value)}
+                        className="status-select"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </td>
+                    <td>{new Date(order.display_date).toLocaleDateString('id-ID')}</td>
                   </tr>
                 ))}
               </tbody>
