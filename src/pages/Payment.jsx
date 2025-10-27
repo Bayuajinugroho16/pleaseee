@@ -24,14 +24,23 @@ const Payment = () => {
   const handleFileUpload = async (e) => {
   const file = e.target.files[0];
   if (file) {
-    console.log("📁 File Selected:", file.name);
+    console.log("📁 File Selected:", file.name, "Size:", (file.size / 1024 / 1024).toFixed(2), "MB");
     setUploading(true);
 
     try {
+      // ✅ COMPRESS IMAGE JIKA TERLALU BESAR
+      let processedFile = file;
+      
+      if (file.size > 1 * 1024 * 1024) { // Jika > 1MB
+        console.log("🔧 Compressing image...");
+        processedFile = await compressImage(file);
+        console.log("📊 After compression:", (processedFile.size / 1024 / 1024).toFixed(2), "MB");
+      }
+
       // ✅ CONVERT TO BASE64
       const base64Image = await new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(processedFile);
         reader.onload = () => {
           const base64String = reader.result.split(',')[1];
           resolve(base64String);
@@ -39,7 +48,7 @@ const Payment = () => {
         reader.onerror = error => reject(error);
       });
 
-      console.log("📊 Base64 data length:", base64Image.length);
+      console.log("📊 Base64 data length:", base64Image.length, "characters");
 
       // ✅ GUNAKAN ENDPOINT BARU
       const response = await fetch(
@@ -51,9 +60,9 @@ const Payment = () => {
           },
           body: JSON.stringify({
             booking_reference: pendingBooking.booking_reference,
-            payment_filename: file.name,
+            payment_filename: processedFile.name,
             payment_base64: base64Image,
-            payment_mimetype: file.type
+            payment_mimetype: processedFile.type
           }),
         }
       );
@@ -61,6 +70,8 @@ const Payment = () => {
       console.log("📥 Upload Response Status:", response.status);
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Server response:", errorText);
         throw new Error(`Upload failed with status: ${response.status}`);
       }
 
@@ -69,11 +80,11 @@ const Payment = () => {
 
       if (result.success) {
         setPaymentProof({
-          name: file.name,
-          type: file.type,
-          size: file.size,
+          name: processedFile.name,
+          type: processedFile.type,
+          size: processedFile.size,
           fileName: result.fileName,
-          base64: base64Image // ✅ UNTUK PREVIEW
+          base64: base64Image
         });
         setShowConfirmation(true);
       } else {
@@ -86,6 +97,53 @@ const Payment = () => {
       setUploading(false);
     }
   }
+};
+
+// ✅ COMPRESS IMAGE FUNCTION
+const compressImage = (file) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      // Set max dimensions
+      const MAX_WIDTH = 1200;
+      const MAX_HEIGHT = 1200;
+      
+      let { width, height } = img;
+      
+      // Calculate new dimensions maintaining aspect ratio
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width = Math.round((width * MAX_HEIGHT) / height);
+          height = MAX_HEIGHT;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw image with new dimensions
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Convert to JPEG with quality 0.8 (80%)
+      canvas.toBlob((blob) => {
+        const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+          type: 'image/jpeg',
+          lastModified: Date.now(),
+        });
+        resolve(compressedFile);
+      }, 'image/jpeg', 0.8);
+    };
+    
+    img.src = URL.createObjectURL(file);
+  });
 };
 
   // Handle Confirm Payment
