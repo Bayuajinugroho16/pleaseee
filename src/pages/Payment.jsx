@@ -21,91 +21,18 @@ const Payment = () => {
     console.log("Pending Booking:", pendingBooking);
   }, []);
 
- const handleFileUpload = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  // ✅ SIMPLE UPLOAD - BASE64 ONLY (NO CLOUDINARY)
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  console.log("📁 File Selected:", file.name);
-  setUploading(true);
+    console.log("📁 File Selected:", file.name);
+    setUploading(true);
 
-  try {
-    // ✅ BUAT FILENAME UNIK UNTUK MENGHINDARI CONFLICT
-    const uniqueFileName = `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${file.name}`;
-    
-    console.log("☁️ Uploading to Cloudinary...");
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "cinema_payments");
-    
-    // ✅ TAMBAHKAN PARAMETER UNTUK HANDLE SETTINGS PRESET
-    formData.append("public_id", uniqueFileName); // Force unique public_id
-    formData.append("overwrite", "true"); // Force overwrite
-
-    const cloudinaryResponse = await fetch(
-      "https://api.cloudinary.com/v1_1/dafdoluym/image/upload",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
-
-    console.log("📤 Cloudinary Response Status:", cloudinaryResponse.status);
-
-    if (!cloudinaryResponse.ok) {
-      const errorText = await cloudinaryResponse.text();
-      console.error("❌ Cloudinary error response:", errorText);
-      throw new Error(`Cloudinary upload failed: ${cloudinaryResponse.status} - ${errorText}`);
-    }
-
-    const cloudinaryResult = await cloudinaryResponse.json();
-    console.log("✅ Cloudinary upload success:", cloudinaryResult);
-
-    // ✅ LANJUTKAN DENGAN PROSES BIASA...
-    const ticketData = {
-      booking_reference: pendingBooking.booking_reference,
-      customer_name: pendingBooking.customer_name,
-      customer_email: pendingBooking.customer_email,
-      movie_title: pendingBooking.movie_title,
-      seat_numbers: pendingBooking.seat_numbers,
-      total_amount: pendingBooking.total_amount,
-      showtime: pendingBooking.showtime,
-      status: 'confirmed',
-      payment_proof: cloudinaryResult.secure_url,
-      payment_filename: file.name,
-      cloudinary_url: cloudinaryResult.secure_url,
-      cloudinary_public_id: cloudinaryResult.public_id,
-      saved_at: new Date().toISOString()
-    };
-
-    // Simpan ke localStorage
-    localStorage.setItem('recent_booking', JSON.stringify(ticketData));
-    
-    const emergencyPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
-    const filteredPayments = emergencyPayments.filter(p => 
-      p.booking_reference !== pendingBooking.booking_reference
-    );
-    filteredPayments.push(ticketData);
-    localStorage.setItem('emergency_payments', JSON.stringify(filteredPayments));
-
-    console.log('💾 Payment data saved:', ticketData);
-
-    // Set payment proof untuk preview
-    setPaymentProof({
-      name: file.name,
-      fileName: file.name,
-      url: cloudinaryResult.secure_url,
-      cloudinaryId: cloudinaryResult.public_id
-    });
-    
-    setShowConfirmation(true);
-
-  } catch (error) {
-    console.error("❌ Upload error:", error);
-    
-    // ✅ FALLBACK KE BASE64 JIKA CLOUDINARY GAGAL
-    console.log("⚠️ Cloudinary failed, trying base64 fallback...");
     try {
+      // ✅ STEP 1: CONVERT FILE TO BASE64
+      console.log("🔄 Converting file to base64...");
+      
       const base64Image = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target.result);
@@ -113,6 +40,43 @@ const Payment = () => {
         reader.readAsDataURL(file);
       });
 
+      console.log("✅ Base64 conversion success, length:", base64Image.length);
+
+      // ✅ STEP 2: SIMPAN KE DATABASE
+      console.log("💾 Saving to database...");
+      
+      let dbResult = { success: false };
+      
+      try {
+        const response = await fetch(
+          "https://beckendflyio.vercel.app/api/update-payment-base64",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              booking_reference: pendingBooking.booking_reference,
+              payment_filename: file.name,
+              payment_base64: base64Image, // ✅ LANGSUNG BASE64
+              payment_mimetype: file.type
+            }),
+          }
+        );
+
+        console.log("📥 Database Response Status:", response.status);
+
+        if (response.ok) {
+          dbResult = await response.json();
+          console.log("✅ Database save result:", dbResult);
+        } else {
+          console.log("⚠️ Database save failed, using local storage");
+        }
+      } catch (serverError) {
+        console.log("⚠️ Server error, using local storage:", serverError.message);
+      }
+
+      // ✅ STEP 3: SIMPAN KE LOCALSTORAGE (BACKUP)
       const ticketData = {
         booking_reference: pendingBooking.booking_reference,
         customer_name: pendingBooking.customer_name,
@@ -125,37 +89,65 @@ const Payment = () => {
         payment_proof: base64Image,
         payment_filename: file.name,
         saved_at: new Date().toISOString(),
-        upload_method: 'base64_fallback'
+        db_success: dbResult.success
       };
 
+      // Cleanup localStorage sebelum simpan
+      cleanupLocalStorage();
+      
+      // Simpan ke localStorage
       localStorage.setItem('recent_booking', JSON.stringify(ticketData));
       
-      const emergencyPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
-      const filteredPayments = emergencyPayments.filter(p => 
-        p.booking_reference !== pendingBooking.booking_reference
-      );
-      filteredPayments.push(ticketData);
-      localStorage.setItem('emergency_payments', JSON.stringify(filteredPayments));
+      // Update emergency payments
+      updateEmergencyPayments(ticketData);
 
+      console.log('💾 Payment data saved locally:', ticketData);
+
+      // ✅ STEP 4: SET PAYMENT PROOF UNTUK PREVIEW
       setPaymentProof({
         name: file.name,
         fileName: file.name,
-        url: base64Image,
-        uploadMethod: 'base64'
+        url: base64Image, // ✅ LANGSUNG BASE64 UNTUK PREVIEW
+        dbSuccess: dbResult.success
       });
       
       setShowConfirmation(true);
-      
-    } catch (fallbackError) {
-      console.error("❌ Base64 fallback also failed:", fallbackError);
-      alert("Upload failed: " + error.message + "\nFallback also failed: " + fallbackError.message);
-    }
-  } finally {
-    setUploading(false);
-  }
-};
 
-  // ✅ FIXED: Handle Confirm Payment
+    } catch (error) {
+      console.error("❌ Upload error:", error);
+      alert("Upload error: " + error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // ✅ CLEANUP LOCALSTORAGE
+  const cleanupLocalStorage = () => {
+    try {
+      const emergencyPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
+      if (emergencyPayments.length > 3) {
+        const recentPayments = emergencyPayments.slice(-3);
+        localStorage.setItem('emergency_payments', JSON.stringify(recentPayments));
+      }
+    } catch (error) {
+      console.log('⚠️ Cleanup warning:', error.message);
+    }
+  };
+
+  // ✅ UPDATE EMERGENCY PAYMENTS
+  const updateEmergencyPayments = (newPayment) => {
+    try {
+      const emergencyPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
+      const filteredPayments = emergencyPayments.filter(p => p.booking_reference !== newPayment.booking_reference);
+      filteredPayments.push(newPayment);
+      const recentPayments = filteredPayments.slice(-5);
+      localStorage.setItem('emergency_payments', JSON.stringify(recentPayments));
+    } catch (error) {
+      console.log('⚠️ Update emergency payments failed:', error.message);
+    }
+  };
+
+  // ✅ HANDLE CONFIRM PAYMENT
   const handleConfirmPayment = async () => {
     if (!pendingBooking || !paymentProof) {
       alert("Please upload payment proof first!");
@@ -165,7 +157,7 @@ const Payment = () => {
     setLoading(true);
 
     try {
-      // ✅ LANGSUNG NAVIGATE KE TICKET DENGAN DATA YANG ADA
+      // ✅ LANGSUNG NAVIGATE KE TICKET
       const ticketData = {
         booking_reference: pendingBooking.booking_reference,
         customer_name: pendingBooking.customer_name,
@@ -175,14 +167,13 @@ const Payment = () => {
         total_amount: pendingBooking.total_amount,
         showtime: pendingBooking.showtime,
         status: 'confirmed',
-        payment_proof: paymentProof.url || paymentProof.fileName,
+        payment_proof: paymentProof.url,
         emergency_save: !paymentProof.dbSuccess,
         saved_at: new Date().toISOString()
       };
 
       console.log("🎫 Navigating to ticket with data:", ticketData);
 
-      // ✅ TUTUP MODAL DAN NAVIGATE
       setShowConfirmation(false);
       navigate("/ticket", { 
         state: { 
@@ -303,7 +294,7 @@ const Payment = () => {
           {/* QRIS GoPay */}
           <div className="qris-section">
             <h3> Bayar Sesuai Total Nominal </h3>
-            <p className="qris-description">Screenshoot Untuk Scan QR Code</p>
+            <p className="qris-description">Screenshot Untuk Scan QR Code</p>
 
             {!qrImageError ? (
               <img
@@ -334,18 +325,18 @@ const Payment = () => {
             </p>
           </div>
 
-          {/* Upload Payment Proof */}
+          {/* Upload Payment Proof - SIMPLE BASE64 */}
           <div className="upload-section">
             <h3>📎 Upload Payment Proof</h3>
             <p className="upload-description">
-              Upload screenshot of your successful payment (JPG, PNG, PDF)
+              Upload screenshot of your successful payment (JPG, PNG)
             </p>
 
             <div className="file-input-container">
               <input
                 type="file"
                 id="payment-proof"
-                accept="image/*,.pdf,.jpg,.jpeg,.png"
+                accept="image/*,.jpg,.jpeg,.png"
                 onChange={handleFileUpload}
                 disabled={uploading || paymentProof}
                 className="file-input"
@@ -368,7 +359,7 @@ const Payment = () => {
             {uploading && (
               <div className="uploading-text">
                 <div className="loading-spinner-small"></div>
-                Uploading your payment proof...
+                Processing your payment proof...
               </div>
             )}
 
@@ -401,7 +392,6 @@ const Payment = () => {
               Back to Booking
             </button>
 
-            {/* Tombol manual confirm */}
             {paymentProof && !showConfirmation && (
               <button
                 onClick={() => setShowConfirmation(true)}
