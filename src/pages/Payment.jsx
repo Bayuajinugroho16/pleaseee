@@ -29,34 +29,19 @@ const Payment = () => {
       setUploading(true);
 
       try {
-        // ✅ CONVERT FILE TO BASE64 (SEPERTI BUNDLE CHECKOUT)
-        const base64Image = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => {
-            // Remove "data:image/jpeg;base64," prefix
-            const base64String = reader.result.split(",")[1];
-            resolve(base64String);
-          };
-          reader.onerror = (error) => reject(error);
-        });
+        // ✅ OPTION 1: GUNAKAN FormData (LEBIH BAIK)
+        const formData = new FormData();
+        formData.append('payment_proof', file);
+        formData.append('booking_reference', pendingBooking.booking_reference);
 
-        console.log("📊 Base64 data length:", base64Image.length);
+        console.log("📤 Uploading with FormData...");
 
-        // ✅ SIMPAN BASE64 KE DATABASE (TANPA FORMData)
         const response = await fetch(
-          "https://beckendflyio.vercel.app/api/update-payment-base64",
+          "https://beckendflyio.vercel.app/api/bookings/upload-payment", // ✅ ENDPOINT YANG SUDAH ADA
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              booking_reference: pendingBooking.booking_reference,
-              payment_filename: file.name,
-              payment_base64: base64Image,
-              payment_mimetype: file.type,
-            }),
+            // ❌ JANGAN SET HEADERS - biarkan browser handle
+            body: formData,
           }
         );
 
@@ -70,13 +55,21 @@ const Payment = () => {
         console.log("✅ Upload Result:", result);
 
         if (result.success) {
+          // ✅ BACA FILE UNTUK PREVIEW
+          const base64Image = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+          });
+
           // ✅ SIMPAN DATA UNTUK PREVIEW & KONFIRMASI
           setPaymentProof({
             name: file.name,
             type: file.type,
             size: file.size,
             fileName: result.fileName,
-            base64: base64Image, // ✅ SIMPAN BASE64 UNTUK PREVIEW
+            base64: base64Image,
           });
 
           // ✅ TAMPILKAN KONFIRMASI
@@ -114,7 +107,6 @@ const Payment = () => {
           },
           body: JSON.stringify({
             booking_reference: pendingBooking.booking_reference,
-            payment_proof: paymentProof.fileName || paymentProof.name,
           }),
         }
       );
@@ -250,12 +242,12 @@ const Payment = () => {
               />
             ) : (
               <div className="qris-fallback">
-                <div className="fallback-icon">❌</div>
+                <div className="fallback-icon">💳</div>
                 <p className="fallback-text">
-                  QR Code Image Not Found
+                  Transfer ke: 08123456789 (GoPay)
                   <br />
                   <span className="fallback-subtext">
-                    Check backend public folder
+                    Total: Rp {pendingBooking.total_amount?.toLocaleString()}
                   </span>
                 </p>
               </div>
@@ -266,7 +258,7 @@ const Payment = () => {
             </p>
           </div>
 
-          {/* Upload Payment Proof - HANYA SATU KALI */}
+          {/* Upload Payment Proof */}
           <div className="upload-section">
             <h3>📎 Upload Payment Proof</h3>
             <p className="upload-description">
@@ -308,7 +300,7 @@ const Payment = () => {
               <div className="payment-preview">
                 <h4>📷 Payment Proof Preview:</h4>
                 <img
-                  src={`data:${paymentProof.type};base64,${paymentProof.base64}`}
+                  src={paymentProof.base64}
                   alt="Payment Proof Preview"
                   className="payment-preview-image"
                 />
@@ -328,7 +320,7 @@ const Payment = () => {
               Back to Booking
             </button>
 
-            {/* Tombol manual confirm jika user ingin confirm manual */}
+            {/* Tombol manual confirm */}
             {paymentProof && !showConfirmation && (
               <button
                 onClick={() => setShowConfirmation(true)}
