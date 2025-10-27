@@ -493,33 +493,37 @@ const BundleCheckout = () => {
               </div>
 
               {/* QRIS GoPay Section */}
-              <div className="qris-section">
-                <h4>💰 Scan QRIS GoPay</h4>
-                <p className="qris-description">
-                  Scan QR code below using GoPay app
-                </p>
-                
-                {!qrImageError ? (
-                  <img 
-                    src="https://beckendflyio.vercel.app/images/gopay-qr.jpg"
-                    alt="QRIS GoPay" 
-                    className="qris-image"
-                    onError={() => {
-                      console.log('❌ QR image failed to load');
-                      setQrImageError(true);
-                    }}
-                    onLoad={() => console.log('✅ QR image loaded successfully')}
-                  />
-                ) : (
-                  <div className="qris-fallback">
-                    <div className="fallback-icon">❌</div>
-                    <p className="fallback-text">
-                      QR Code Image Not Found<br/>
-                      <span className="fallback-subtext">Check backend public folder</span>
-                    </p>
-                  </div>
-                )}
-                
+<div className="qris-section">
+  <h4>💰 Scan QRIS GoPay</h4>
+  <p className="qris-description">
+    Scan QR code below using GoPay app
+  </p>
+  
+  {!qrImageError ? (
+    <img 
+      src="https://i.ibb.co/nsy-P8-S8-M/gopay1-qr.jpg"  // ✅ URL BARU DARI IMGBB
+      alt="QRIS GoPay" 
+      className="qris-image"
+      onError={() => {
+        console.log('❌ QR image failed to load');
+        setQrImageError(true);
+      }}
+      onLoad={() => console.log('✅ QR image loaded successfully')}
+    />
+  ) : (
+    <div className="qris-fallback">
+      <div className="fallback-icon">❌</div>
+      <p className="fallback-text">
+        QR Code Image Not Found<br/>
+        <span className="fallback-subtext">Check backend public folder</span>
+      </p>
+    </div>
+  )}
+
+  <p className="payment-amount">
+    Amount: Rp {pendingBooking.total_amount?.toLocaleString()}
+  </p>
+</div>  
                 <p className="payment-amount">
                   Amount: Rp {totalPrice.toLocaleString()}
                 </p>
@@ -537,7 +541,7 @@ const BundleCheckout = () => {
                   Transfer sesuai total pembayaran dan upload bukti transfer di form sebelah
                 </p>
               </div> */}
-            </div>
+            {/* </div> */}
 
             {/* Customer Form & Payment Upload */}
             <div className="customer-form">
