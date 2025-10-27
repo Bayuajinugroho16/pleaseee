@@ -137,6 +137,34 @@ const Payment = () => {
     }
   };
 
+  // ✅ SIMPAN DATA UNTUK EMERGENCY TICKETS
+  const ticketData = {
+    booking_reference: pendingBooking.booking_reference,
+    customer_name: pendingBooking.customer_name,
+    customer_email: pendingBooking.customer_email,
+    movie_title: pendingBooking.movie_title,
+    seat_numbers: pendingBooking.seat_numbers,
+    total_amount: pendingBooking.total_amount,
+    showtime: pendingBooking.showtime,
+    status: 'confirmed',
+    payment_proof: cloudinaryResult.secure_url,
+    payment_filename: file.name,
+    username: user?.username, // Jika ada user context
+    saved_at: new Date().toISOString()
+  };
+
+  // Simpan ke localStorage untuk emergency tickets
+  localStorage.setItem('recent_booking', JSON.stringify(ticketData));
+
+  // Juga simpan ke emergency payments
+  const emergencyPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
+  const filteredPayments = emergencyPayments.filter(p => 
+    p.booking_reference !== pendingBooking.booking_reference
+  );
+  filteredPayments.push(ticketData);
+  localStorage.setItem('emergency_payments', JSON.stringify(filteredPayments));
+
+  console.log('💾 Emergency ticket data saved:', ticketData);
   // Handle Confirm Payment - SIMPLIFIED
   const handleConfirmPayment = async () => {
     if (!pendingBooking) return;
