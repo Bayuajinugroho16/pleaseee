@@ -21,155 +21,126 @@ const Payment = () => {
     console.log("Pending Booking:", pendingBooking);
   }, []);
 
-  // ✅ EMERGENCY SAVE KE LOCALSTORAGE
-  const emergencySavePayment = (bookingReference, fileName, cloudinaryUrl) => {
-    const paymentData = {
-      booking_reference: bookingReference,
-      payment_filename: fileName,
-      payment_url: cloudinaryUrl,
-      saved_at: new Date().toISOString(),
-      status: 'confirmed'
-    };
-    
-    // Save to localStorage
-    const existingPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
-    const filteredPayments = existingPayments.filter(p => p.booking_reference !== bookingReference);
-    filteredPayments.push(paymentData);
-    localStorage.setItem('emergency_payments', JSON.stringify(filteredPayments));
-    
-    console.log('💾 EMERGENCY: Payment saved to localStorage:', paymentData);
-    
-    return {
-      success: true,
-      message: 'Payment saved locally (server offline)',
-      data: paymentData
-    };
-  };
-
+  // ✅ FIXED: Handle File Upload dengan error handling yang better
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      console.log("📁 File Selected:", file.name);
-      setUploading(true);
+    if (!file) return;
 
+    console.log("📁 File Selected:", file.name);
+    setUploading(true);
+
+    // ✅ DEFINE VARIABLE DI SCOPE YANG TEPAT
+    let cloudinaryResult = null;
+
+    try {
+      // ✅ STEP 1: UPLOAD KE CLOUDINARY
+      console.log("☁️ Uploading to Cloudinary...");
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "cinema_payments");
+
+      const cloudinaryResponse = await fetch(
+        "https://api.cloudinary.com/v1_1/dafdoluym/image/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!cloudinaryResponse.ok) {
+        throw new Error(`Cloudinary upload failed: ${cloudinaryResponse.status}`);
+      }
+
+      cloudinaryResult = await cloudinaryResponse.json();
+      console.log("✅ Cloudinary upload success:", cloudinaryResult);
+
+      // ✅ STEP 2: COBA SIMPAN KE SERVER
+      console.log("💾 Trying to save to database...");
+      
+      let dbResult = { success: false, message: "Server offline" };
+      
       try {
-        // ✅ STEP 1: UPLOAD KE CLOUDINARY
-        console.log("☁️ Uploading to Cloudinary...");
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", "cinema_payments"); // Ganti dengan upload preset kamu
-
-        const cloudinaryResponse = await fetch(
-          "https://api.cloudinary.com/v1_1/dafdoluym/image/upload",
+        const response = await fetch(
+          "https://beckendflyio.vercel.app/api/update-payment-base64",
           {
             method: "POST",
-            body: formData,
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              booking_reference: pendingBooking.booking_reference,
+              payment_filename: file.name,
+              payment_base64: "cloudinary_uploaded",
+              payment_mimetype: file.type,
+              payment_url: cloudinaryResult.secure_url
+            }),
           }
         );
 
-        if (!cloudinaryResponse.ok) {
-          throw new Error(
-            `Cloudinary upload failed: ${cloudinaryResponse.status}`
-          );
+        console.log("📥 Database Response Status:", response.status);
+
+        if (response.ok) {
+          dbResult = await response.json();
+          console.log("✅ Database save result:", dbResult);
+        } else {
+          throw new Error(`Server returned ${response.status}`);
         }
-
-        const cloudinaryResult = await cloudinaryResponse.json();
-        console.log("✅ Cloudinary upload success:", cloudinaryResult);
-
-        // ✅ STEP 2: COBA SIMPAN KE SERVER YANG ADA
-        console.log("💾 Trying to save to database...");
-        
-        let dbResult;
-        try {
-          // COBA ENDPOINT YANG MUNGKIN ADA
-          const response = await fetch(
-            "https://beckendflyio.vercel.app/api/update-payment-base64",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                booking_reference: pendingBooking.booking_reference,
-                payment_filename: file.name,
-                payment_base64: "cloudinary_uploaded", // Fake base64 karena pakai Cloudinary
-                payment_mimetype: file.type,
-                payment_url: cloudinaryResult.secure_url // Tetap kirim URL
-              }),
-            }
-          );
-
-          console.log("📥 Database Response Status:", response.status);
-
-          if (response.ok) {
-            dbResult = await response.json();
-            console.log("✅ Database save result:", dbResult);
-          } else {
-            throw new Error(`Server returned ${response.status}`);
-          }
-        } catch (serverError) {
-          console.log("⚠️ Server save failed, using emergency save:", serverError);
-          // FALLBACK KE EMERGENCY SAVE
-          dbResult = emergencySavePayment(
-            pendingBooking.booking_reference, 
-            file.name, 
-            cloudinaryResult.secure_url
-          );
-        }
-
-        // ✅ SET PAYMENT PROOF UNTUK PREVIEW
-        setPaymentProof({
-          name: file.name,
-          fileName: dbResult.fileName || file.name,
-          url: cloudinaryResult.secure_url,
-          dbSuccess: dbResult.success
-        });
-        
-        setShowConfirmation(true);
-
-      } catch (error) {
-        console.error("❌ Upload error:", error);
-        alert("Upload error: " + error.message);
-      } finally {
-        setUploading(false);
+      } catch (serverError) {
+        console.log("⚠️ Server save failed:", serverError.message);
+        // Lanjut dengan emergency save
       }
+
+      // ✅ STEP 3: SIMPAN DATA UNTUK EMERGENCY TICKETS
+      const ticketData = {
+        booking_reference: pendingBooking.booking_reference,
+        customer_name: pendingBooking.customer_name,
+        customer_email: pendingBooking.customer_email,
+        movie_title: pendingBooking.movie_title,
+        seat_numbers: pendingBooking.seat_numbers,
+        total_amount: pendingBooking.total_amount,
+        showtime: pendingBooking.showtime,
+        status: 'confirmed',
+        payment_proof: cloudinaryResult.secure_url, // ✅ VARIABLE SUDAH TERDEFINISI
+        payment_filename: file.name,
+        saved_at: new Date().toISOString(),
+        db_success: dbResult.success
+      };
+
+      // Simpan ke localStorage untuk emergency tickets
+      localStorage.setItem('recent_booking', JSON.stringify(ticketData));
+
+      // Juga simpan ke emergency payments
+      const emergencyPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
+      const filteredPayments = emergencyPayments.filter(p => 
+        p.booking_reference !== pendingBooking.booking_reference
+      );
+      filteredPayments.push(ticketData);
+      localStorage.setItem('emergency_payments', JSON.stringify(filteredPayments));
+
+      console.log('💾 Emergency ticket data saved:', ticketData);
+
+      // ✅ STEP 4: SET PAYMENT PROOF UNTUK PREVIEW
+      setPaymentProof({
+        name: file.name,
+        fileName: dbResult.fileName || file.name,
+        url: cloudinaryResult.secure_url, // ✅ VARIABLE SUDAH TERDEFINISI
+        dbSuccess: dbResult.success
+      });
+      
+      setShowConfirmation(true);
+
+    } catch (error) {
+      console.error("❌ Upload error:", error);
+      alert("Upload error: " + error.message);
+    } finally {
+      setUploading(false);
     }
   };
 
-  // ✅ SIMPAN DATA UNTUK EMERGENCY TICKETS
-  const ticketData = {
-    booking_reference: pendingBooking.booking_reference,
-    customer_name: pendingBooking.customer_name,
-    customer_email: pendingBooking.customer_email,
-    movie_title: pendingBooking.movie_title,
-    seat_numbers: pendingBooking.seat_numbers,
-    total_amount: pendingBooking.total_amount,
-    showtime: pendingBooking.showtime,
-    status: 'confirmed',
-    payment_proof: cloudinaryResult.secure_url,
-    payment_filename: file.name,
-    username: user?.username, // Jika ada user context
-    saved_at: new Date().toISOString()
-  };
-
-  // Simpan ke localStorage untuk emergency tickets
-  localStorage.setItem('recent_booking', JSON.stringify(ticketData));
-
-  // Juga simpan ke emergency payments
-  const emergencyPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
-  const filteredPayments = emergencyPayments.filter(p => 
-    p.booking_reference !== pendingBooking.booking_reference
-  );
-  filteredPayments.push(ticketData);
-  localStorage.setItem('emergency_payments', JSON.stringify(filteredPayments));
-
-  console.log('💾 Emergency ticket data saved:', ticketData);
-  // Handle Confirm Payment - SIMPLIFIED
+  // ✅ FIXED: Handle Confirm Payment
   const handleConfirmPayment = async () => {
-    if (!pendingBooking) return;
-
-    if (!paymentProof) {
+    if (!pendingBooking || !paymentProof) {
       alert("Please upload payment proof first!");
       return;
     }
@@ -188,7 +159,6 @@ const Payment = () => {
         showtime: pendingBooking.showtime,
         status: 'confirmed',
         payment_proof: paymentProof.url || paymentProof.fileName,
-        // Tambahkan data emergency jika ada
         emergency_save: !paymentProof.dbSuccess,
         saved_at: new Date().toISOString()
       };
@@ -217,14 +187,6 @@ const Payment = () => {
     setShowConfirmation(false);
     setPaymentProof(null);
   };
-
-  // ✅ TAMPILKAN EMERGENCY PAYMENTS DI CONSOLE
-  useEffect(() => {
-    const emergencyPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
-    if (emergencyPayments.length > 0) {
-      console.log('🆘 EMERGENCY PAYMENTS IN LOCALSTORAGE:', emergencyPayments);
-    }
-  }, []);
 
   if (!pendingBooking) {
     return (
