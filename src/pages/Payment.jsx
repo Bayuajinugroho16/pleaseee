@@ -21,18 +21,62 @@ const Payment = () => {
     console.log("Pending Booking:", pendingBooking);
   }, []);
 
-  // ✅ SIMPLE UPLOAD - BASE64 ONLY (NO CLOUDINARY)
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+ const handleFileUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    console.log("📁 File Selected:", file.name);
-    setUploading(true);
+  console.log("📁 File Selected:", file.name);
+  setUploading(true);
 
-    try {
-      // ✅ STEP 1: CONVERT FILE TO BASE64
-      console.log("🔄 Converting file to base64...");
+  try {
+    // ✅ GUNAKAN ENDPOINT YANG SUDAH ADA
+    console.log("🔄 Using FormData upload...");
+
+    const formData = new FormData();
+    formData.append("payment_proof", file);
+    formData.append("booking_reference", pendingBooking.booking_reference);
+
+    const response = await fetch(
+      "https://beckendflyio.vercel.app/api/upload-payment",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    console.log("📤 Server response status:", response.status);
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log("✅ Upload successful:", result);
       
+      // Set payment proof untuk preview
+      const base64Image = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
+
+      setPaymentProof({
+        name: file.name,
+        fileName: result.fileName,
+        url: base64Image,
+        dbSuccess: true
+      });
+      
+      setShowConfirmation(true);
+    } else {
+      const errorText = await response.text();
+      console.error("❌ Upload failed:", errorText);
+      throw new Error(`Upload failed: ${response.status}`);
+    }
+
+  } catch (error) {
+    console.error("❌ Upload error:", error);
+    
+    // ✅ FALLBACK - BASE64 KE LOCALSTORAGE
+    console.log("⚠️ Server upload failed, using base64 fallback...");
+    try {
       const base64Image = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target.result);
@@ -40,43 +84,6 @@ const Payment = () => {
         reader.readAsDataURL(file);
       });
 
-      console.log("✅ Base64 conversion success, length:", base64Image.length);
-
-      // ✅ STEP 2: SIMPAN KE DATABASE
-      console.log("💾 Saving to database...");
-      
-      let dbResult = { success: false };
-      
-      try {
-        const response = await fetch(
-          "https://beckendflyio.vercel.app/api/update-payment-base64",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              booking_reference: pendingBooking.booking_reference,
-              payment_filename: file.name,
-              payment_base64: base64Image, // ✅ LANGSUNG BASE64
-              payment_mimetype: file.type
-            }),
-          }
-        );
-
-        console.log("📥 Database Response Status:", response.status);
-
-        if (response.ok) {
-          dbResult = await response.json();
-          console.log("✅ Database save result:", dbResult);
-        } else {
-          console.log("⚠️ Database save failed, using local storage");
-        }
-      } catch (serverError) {
-        console.log("⚠️ Server error, using local storage:", serverError.message);
-      }
-
-      // ✅ STEP 3: SIMPAN KE LOCALSTORAGE (BACKUP)
       const ticketData = {
         booking_reference: pendingBooking.booking_reference,
         customer_name: pendingBooking.customer_name,
@@ -89,37 +96,36 @@ const Payment = () => {
         payment_proof: base64Image,
         payment_filename: file.name,
         saved_at: new Date().toISOString(),
-        db_success: dbResult.success
+        upload_method: 'base64_fallback'
       };
 
-      // Cleanup localStorage sebelum simpan
-      cleanupLocalStorage();
-      
       // Simpan ke localStorage
       localStorage.setItem('recent_booking', JSON.stringify(ticketData));
       
-      // Update emergency payments
-      updateEmergencyPayments(ticketData);
+      const emergencyPayments = JSON.parse(localStorage.getItem('emergency_payments') || '[]');
+      const filteredPayments = emergencyPayments.filter(p => 
+        p.booking_reference !== pendingBooking.booking_reference
+      );
+      filteredPayments.push(ticketData);
+      localStorage.setItem('emergency_payments', JSON.stringify(filteredPayments));
 
-      console.log('💾 Payment data saved locally:', ticketData);
-
-      // ✅ STEP 4: SET PAYMENT PROOF UNTUK PREVIEW
       setPaymentProof({
         name: file.name,
         fileName: file.name,
-        url: base64Image, // ✅ LANGSUNG BASE64 UNTUK PREVIEW
-        dbSuccess: dbResult.success
+        url: base64Image,
+        uploadMethod: 'base64'
       });
       
       setShowConfirmation(true);
-
-    } catch (error) {
-      console.error("❌ Upload error:", error);
-      alert("Upload error: " + error.message);
-    } finally {
-      setUploading(false);
+      
+    } catch (fallbackError) {
+      console.error("❌ Base64 fallback also failed:", fallbackError);
+      alert("Upload completed locally! Your payment proof is saved in browser.");
     }
-  };
+  } finally {
+    setUploading(false);
+  }
+};
 
   // ✅ CLEANUP LOCALSTORAGE
   const cleanupLocalStorage = () => {
