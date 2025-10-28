@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navigation from "../components/Navigation";
 import "./Payment.css";
+import { supabase } from "../lib/supabase";
 import gopayQR from "../../public/images/gopay1-qr.jpg";
 
 const Payment = () => {
@@ -22,157 +23,126 @@ const Payment = () => {
     }
   }, [location.state]);
 
-  const handleFileUpload = async (e) => {
+const handleFileUpload = async (e) => {
   const file = e.target.files[0];
-  if (file) {
-    console.log("📁 File Selected:", file.name);
-    setUploading(true);
+  if (!file) return;
 
-    try {
-      // ✅ VALIDASI FILE
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File terlalu besar! Maksimal 5MB.");
-        return;
-      }
+  console.log("📁 File Selected:", file.name);
+  setUploading(true);
 
-      if (!file.type.startsWith("image/")) {
-        alert("Hanya file gambar yang diizinkan!");
-        return;
-      }
-
-      // Generate codes
-      const bookingReference = `BK${Date.now().toString().slice(-6)}`;
-      const verificationCode = Math.floor(
-        100000 + Math.random() * 900000
-      ).toString();
-
-      // ✅ 1. DEBUG DETAIL
-      console.log("🔍 DETAIL pendingBooking:", {
-        showtime_id: pendingBooking.showtime_id,
-        username: pendingBooking.username,
-        email: pendingBooking.email,
-        seat_numbers: pendingBooking.seat_numbers,
-        total_amount: pendingBooking.total_amount,
-        movie_title: pendingBooking.movie_title,
-        phone: pendingBooking.phone
-      });
-
-      // ✅ 2. VALIDASI YANG LEBIH SIMPLE
-      if (!pendingBooking.showtime_id || !pendingBooking.username || !pendingBooking.email || 
-          !pendingBooking.seat_numbers || !pendingBooking.total_amount || !pendingBooking.movie_title) {
-        throw new Error("Data booking tidak lengkap. Pastikan semua field terisi.");
-      }
-
-      // ✅ 3. FORMAT DATA - PERBAIKI seat_numbers
-      const bookingData = {
-        showtime_id: pendingBooking.showtime_id,
-        customer_name: pendingBooking.username,
-        customer_email: pendingBooking.email,
-        customer_phone: pendingBooking.phone || "",
-        seat_numbers: pendingBooking.seat_numbers, // ✅ LANGSUNG PAKAI ARRAY, biar backend yang handle JSON
-        total_amount: parseFloat(pendingBooking.total_amount),
-        movie_title: pendingBooking.movie_title,
-        booking_reference: bookingReference,
-        verification_code: verificationCode,
-        status: "pending"
-      };
-
-      console.log("📤 Data final untuk backend:", bookingData);
-
-      // ✅ 4. KIRIM KE BACKEND
-      const bookingResponse = await fetch(
-        "https://beckendflyio.vercel.app/api/bookings",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(bookingData),
-        }
-      );
-
-      const bookingResult = await bookingResponse.json();
-
-      console.log("📥 Response dari backend:", {
-        status: bookingResponse.status,
-        ok: bookingResponse.ok,
-        result: bookingResult
-      });
-
-      if (!bookingResponse.ok) {
-        throw new Error(bookingResult.message || `Error: ${bookingResponse.status}`);
-      }
-
-      console.log("✅ Booking berhasil disimpan!");
-
-      // ✅ 5. UPLOAD FILE
-      console.log("📤 Uploading payment proof...");
-
-      const formData = new FormData();
-      formData.append("payment_proof", file);
-      formData.append("booking_reference", bookingReference);
-
-      const uploadResponse = await fetch(
-        "https://beckendflyio.vercel.app/api/upload-payment",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const uploadResult = await uploadResponse.json();
-
-      console.log("📥 Upload response:", uploadResult);
-
-      if (!uploadResponse.ok) {
-        throw new Error(uploadResult.message || `Upload gagal`);
-      }
-
-      console.log("✅✅✅ FILE UPLOADED SUCCESS!");
-
-      // ✅ 6. GENERATE URL GAMBAR
-      const fileName = uploadResult.data?.fileName || uploadResult.fileName;
-      const imageUrl = fileName
-        ? `https://beckendflyio.vercel.app/bukti_pembayaran/${fileName}`
-        : null;
-
-      console.log("🖼️ Payment proof URL:", imageUrl);
-
-      // Convert file untuk preview lokal
-      const base64Image = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
-      });
-
-      // ✅ 7. UPDATE STATE
-      setPendingBooking((prev) => ({
-        ...prev,
-        booking_reference: bookingReference,
-        verification_code: verificationCode,
-        status: "pending_verification",
-        payment_proof: imageUrl,
-        payment_filename: file.name,
-      }));
-
-      setPaymentProof({
-        name: file.name,
-        base64: base64Image,
-        fileUrl: imageUrl,
-      });
-
-      setShowConfirmation(true);
-
-      console.log("🎉 PROSES SELESAI!");
-
-    } catch (error) {
-      console.error("❌ ERROR DETAIL:", {
-        message: error.message,
-        name: error.name
-      });
-      alert("Error: " + error.message);
-    } finally {
-      setUploading(false);
+  try {
+    // ✅ VALIDASI FILE
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File terlalu besar! Maksimal 5MB.");
+      return;
     }
+
+    if (!file.type.startsWith("image/")) {
+      alert("Hanya file gambar yang diizinkan!");
+      return;
+    }
+
+    // ✅ Generate kode unik
+    const bookingReference = `BK${Date.now().toString().slice(-6)}`;
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // ✅ CEK DATA BOOKING
+    if (
+      !pendingBooking.showtime_id ||
+      !pendingBooking.username ||
+      !pendingBooking.email ||
+      !pendingBooking.seat_numbers ||
+      !pendingBooking.total_amount ||
+      !pendingBooking.movie_title
+    ) {
+      throw new Error("Data booking tidak lengkap. Pastikan semua field terisi.");
+    }
+
+    // ✅ Data booking
+    const bookingData = {
+      showtime_id: pendingBooking.showtime_id,
+      customer_name: pendingBooking.username,
+      customer_email: pendingBooking.email,
+      customer_phone: pendingBooking.phone || "",
+      seat_numbers: pendingBooking.seat_numbers,
+      total_amount: parseFloat(pendingBooking.total_amount),
+      movie_title: pendingBooking.movie_title,
+      booking_reference: bookingReference,
+      verification_code: verificationCode,
+      status: "pending",
+    };
+
+    console.log("📤 Data final untuk backend:", bookingData);
+
+    // ✅ Simpan booking ke backend
+    const bookingResponse = await fetch("https://beckendflyio.vercel.app/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(bookingData),
+    });
+
+    const bookingResult = await bookingResponse.json();
+    if (!bookingResponse.ok) throw new Error(bookingResult.message || `Error: ${bookingResponse.status}`);
+
+    console.log("✅ Booking berhasil disimpan!");
+
+    // ✅ Upload file ke SUPABASE
+    console.log("📤 Uploading payment proof to Supabase...");
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${bookingReference}_${Date.now()}.${fileExt}`;
+    const filePath = fileName;
+
+    const { data, error } = await supabase.storage
+      .from(import.meta.env.VITE_SUPABASE_BUCKET)
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (error) {
+      console.error("❌ Upload error:", error);
+      throw new Error("Upload gagal ke Supabase Storage");
+    }
+
+    // ✅ Dapatkan URL publik
+    const { data: publicUrlData } = supabase.storage
+      .from(import.meta.env.VITE_SUPABASE_BUCKET)
+      .getPublicUrl(filePath);
+
+    const imageUrl = publicUrlData.publicUrl;
+    console.log("🌐 Public image URL:", imageUrl);
+
+    // ✅ Convert file ke base64 untuk preview
+    const base64Image = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+
+    // ✅ Update state booking
+    setPendingBooking((prev) => ({
+      ...prev,
+      booking_reference: bookingReference,
+      verification_code: verificationCode,
+      status: "pending_verification",
+      payment_proof: imageUrl,
+      payment_filename: file.name,
+    }));
+
+    setPaymentProof({
+      name: file.name,
+      base64: base64Image,
+      fileUrl: imageUrl,
+    });
+
+    setShowConfirmation(true);
+    console.log("🎉 PROSES SELESAI!");
+  } catch (error) {
+    console.error("❌ ERROR DETAIL:", error);
+    alert("Error: " + error.message);
+  } finally {
+    setUploading(false);
   }
 };
  // Di Payment.jsx - PERBAIKI handleConfirmPayment
