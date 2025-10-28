@@ -41,7 +41,10 @@ const AdminDatabase = () => {
         }),
       ]);
 
-      const bookingsResult = bookingsRes.ok ? await bookingsRes.json() : { data: [] };
+      const bookingsResult = bookingsRes.ok
+        ? await bookingsRes.json()
+        : { data: [] };
+      setBookings(bookingsResult.data || []);
       const bundleResult = bundleRes.ok ? await bundleRes.json() : { data: [] };
 
       setBookings(bookingsResult.data || []);
@@ -84,10 +87,13 @@ const AdminDatabase = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `https://beckendflyio.vercel.app/api/admin/bookings/${bookingId}/status`,
+        `https://beckendflyio.vercel.app/api/admin/bookings/${bookingReference}/status`,
         {
           method: "PUT",
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({ status: newStatus }),
         }
       );
@@ -175,14 +181,28 @@ const AdminDatabase = () => {
           <div className="payment-modal">
             <div className="modal-header">
               <h3>💰 Payment Proof - {selectedBooking?.customer_name}</h3>
-              <button onClick={() => setShowPaymentModal(false)} className="close-btn">✕</button>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="close-btn"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="modal-content">
-              <p><strong>Customer:</strong> {selectedBooking?.customer_name}</p>
-              <p><strong>Movie:</strong> {selectedBooking?.movie_title}</p>
-              <p><strong>Amount:</strong> Rp {selectedBooking?.total_amount?.toLocaleString()}</p>
-              <p><strong>Status:</strong> {selectedBooking?.status}</p>
+              <p>
+                <strong>Customer:</strong> {selectedBooking?.customer_name}
+              </p>
+              <p>
+                <strong>Movie:</strong> {selectedBooking?.movie_title}
+              </p>
+              <p>
+                <strong>Amount:</strong> Rp{" "}
+                {selectedBooking?.total_amount?.toLocaleString()}
+              </p>
+              <p>
+                <strong>Status:</strong> {selectedBooking?.status}
+              </p>
 
               {imageLoading ? (
                 <div className="spinner"></div>
@@ -192,20 +212,38 @@ const AdminDatabase = () => {
                 <p>Error loading image</p>
               ) : (
                 <div>
-                  <img src={paymentImage} alt="Payment Proof" className="payment-image" />
-                  <button onClick={() => window.open(paymentImage, "_blank")}>🔍 Open Full Size</button>
+                  <img
+                    src={paymentImage}
+                    alt="Payment Proof"
+                    className="payment-image"
+                  />
+                  <button onClick={() => window.open(paymentImage, "_blank")}>
+                    🔍 Open Full Size
+                  </button>
                 </div>
               )}
             </div>
 
             <div className="modal-actions">
               <button onClick={() => setShowPaymentModal(false)}>Close</button>
-              {paymentImage && paymentImage !== "error" && paymentImage !== "not_found" && (
-                <>
-                  <button className="confirm-btn" onClick={() => handleConfirmReject("confirmed")}>✅ Confirm</button>
-                  <button className="reject-btn" onClick={() => handleConfirmReject("rejected")}>❌ Reject</button>
-                </>
-              )}
+              {paymentImage &&
+                paymentImage !== "error" &&
+                paymentImage !== "not_found" && (
+                  <>
+                    <button
+                      className="confirm-btn"
+                      onClick={() => handleConfirmReject("confirmed")}
+                    >
+                      ✅ Confirm
+                    </button>
+                    <button
+                      className="reject-btn"
+                      onClick={() => handleConfirmReject("rejected")}
+                    >
+                      ❌ Reject
+                    </button>
+                  </>
+                )}
             </div>
           </div>
         </div>
@@ -215,11 +253,15 @@ const AdminDatabase = () => {
         <h1>🗃️ Database Viewer</h1>
         <p>Logged in as: {user?.username}</p>
 
-        <button onClick={fetchAllData} className="refresh-btn">🔄 Refresh Data</button>
+        <button onClick={fetchAllData} className="refresh-btn">
+          🔄 Refresh Data
+        </button>
 
         <div className="bookings-table">
           <h2>📋 All Orders</h2>
-          {allOrders.length === 0 ? <p>No orders</p> : (
+          {allOrders.length === 0 ? (
+            <p>No orders</p>
+          ) : (
             <table>
               <thead>
                 <tr>
@@ -237,7 +279,9 @@ const AdminDatabase = () => {
               <tbody>
                 {allOrders.map((o, i) => (
                   <tr key={`${o.order_type}-${o.id || i}`}>
-                    <td>{o.order_type === "bundle" ? "🎁 Bundle" : "🎬 Movie"}</td>
+                    <td>
+                      {o.order_type === "bundle" ? "🎁 Bundle" : "🎬 Movie"}
+                    </td>
                     <td>{o.id}</td>
                     <td>{o.display_customer}</td>
                     <td>{o.display_movie}</td>
@@ -245,20 +289,26 @@ const AdminDatabase = () => {
                     <td>{o.display_status}</td>
                     <td>
                       {o.has_payment_image ? (
-                        <button onClick={() => viewPaymentProof(o)}>👁️ View Proof</button>
-                      ) : <span>❌ No proof</span>}
+                        <button onClick={() => viewPaymentProof(o)}>
+                          👁️ View Proof
+                        </button>
+                      ) : (
+                        <span>❌ No proof</span>
+                      )}
                     </td>
                     <td>
                       <select
                         value={o.display_status}
-                        onChange={(e) => updateBookingStatus(o.id, e.target.value)}
+                        onChange={(e) => updateBookingStatus(o.booking_reference, e.target.value)}
                       >
                         <option value="pending">Pending</option>
                         <option value="confirmed">Confirmed</option>
                         <option value="rejected">Rejected</option>
                       </select>
                     </td>
-                    <td>{new Date(o.display_date).toLocaleDateString("id-ID")}</td>
+                    <td>
+                      {new Date(o.display_date).toLocaleDateString("id-ID")}
+                    </td>
                   </tr>
                 ))}
               </tbody>
