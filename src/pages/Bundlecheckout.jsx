@@ -487,8 +487,7 @@ const BundleCheckout = () => {
                 </div>
               </div>
 
-<<<<<<< HEAD
-              {/* QRIS Section */}
+              {/* QRIS GoPay Section */}
               <div className="qris-section">
                 <h4>💰 Scan QRIS GoPay</h4>
                 <p className="qris-description">
@@ -497,7 +496,7 @@ const BundleCheckout = () => {
                 
                 {!qrImageError ? (
                   <img 
-                    src="https://beckendflyio.vercel.app/public/images/gopay1-qr.jpg"
+                    src="https://beckendflyio.vercel.app/images/gopay1-qr.jpg"
                     alt="QRIS GoPay" 
                     className="qris-image"
                     onError={() => {
@@ -516,35 +515,6 @@ const BundleCheckout = () => {
                     </p>
                   </div>
                 )}
-=======
-              {/* QRIS GoPay Section */}
-<div className="qris-section">
-  <h4>💰 Scan QRIS GoPay</h4>
-  <p className="qris-description">
-    Scan QR code below using GoPay app
-  </p>
-  
-  {!qrImageError ? (
-    <img 
-      src="https://beckendflyio.vercel.app/images/gopay1-qr.jpg"  // ✅ URL BARU DARI IMGBB
-      alt="QRIS GoPay" 
-      className="qris-image"
-      onError={() => {
-        console.log('❌ QR image failed to load');
-        setQrImageError(true);
-      }}
-      onLoad={() => console.log('✅ QR image loaded successfully')}
-    />
-  ) : (
-    <div className="qris-fallback">
-      <div className="fallback-icon">❌</div>
-      <p className="fallback-text">
-        QR Code Image Not Found<br/>
-        <span className="fallback-subtext">Check backend public folder</span>
-      </p>
-    </div>
-  )}
->>>>>>> 9e98a61e13fec97f080a6c731411985cf2efb13b
 
                 <p className="payment-amount">
                   Amount: Rp {totalPrice.toLocaleString()}
