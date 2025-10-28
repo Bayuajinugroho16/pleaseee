@@ -28,34 +28,47 @@ const AdminDatabase = () => {
   }, [isAdmin]);
 
   const fetchAllData = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
+  try {
+    setLoading(true);
+    setError("");
+    
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("Admin token not found");
 
-      const [bookingsRes, bundleRes] = await Promise.all([
-        fetch("https://beckendflyio.vercel.app/api/admin/all-bookings", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch("https://beckendflyio.vercel.app/api/bookings/bundle-orders", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+    // Ambil bookings dan bundle orders sekaligus
+    const [bookingsRes, bundleRes] = await Promise.all([
+      fetch("https://beckendflyio.vercel.app/api/admin/all-bookings", {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      fetch("https://beckendflyio.vercel.app/api/bookings/bundle-orders", {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    ]);
 
-      const bookingsResult = bookingsRes.ok
-        ? await bookingsRes.json()
-        : { data: [] };
-      setBookings(bookingsResult.data || []);
-      const bundleResult = bundleRes.ok ? await bundleRes.json() : { data: [] };
-
-      setBookings(bookingsResult.data || []);
-      setBundleOrders(bundleResult.data || []);
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    if (!bookingsRes.ok) {
+      const err = await bookingsRes.json().catch(() => ({}));
+      throw new Error(err.message || "Failed to fetch regular bookings");
     }
-  };
+
+    if (!bundleRes.ok) {
+      const err = await bundleRes.json().catch(() => ({}));
+      throw new Error(err.message || "Failed to fetch bundle orders");
+    }
+
+    const bookingsData = await bookingsRes.json();
+    const bundleData = await bundleRes.json();
+
+    // Pastikan data array
+    setBookings(bookingsData.data || []);
+    setBundleOrders(bundleData.data || []);
+
+  } catch (err) {
+    console.error(err);
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ✅ View Payment Proof
   const viewPaymentProof = async (booking) => {
