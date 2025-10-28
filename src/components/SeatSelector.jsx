@@ -24,7 +24,7 @@ const SeatSelector = ({ onSeatsChange, showtimeId, movieTitle, refreshTrigger })
       console.log('Params:', { showtime: effectiveShowtimeId, movie: movieTitle });
       
       const encodedMovieTitle = movieTitle ? encodeURIComponent(movieTitle.trim()) : '';
-      const url = `${import.meta.env.VITE_API_URL}/bookings/occupied-seats?showtime_id=${effectiveShowtimeId}&movie_title=${encodedMovieTitle}&_=${Date.now()}`;
+      const url = `${import.meta.env.VITE_API_URL}api/bookings/occupied-seats?showtime_id=${effectiveShowtimeId}&movie_title=${encodedMovieTitle}&_=${Date.now()}`;
       console.log('📡 URL:', url);
       
       const response = await fetch(url);

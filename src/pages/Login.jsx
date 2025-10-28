@@ -118,7 +118,7 @@ const Login = () => {
   const testServerConnection = async () => {
     try {
       setError("Testing server connection...");
-      const response = await fetch("https://beckendflyio.vercel.app/");
+      const response = await fetch("https://beckendflyio.vercel.app");
       if (response.ok) {
         const data = await response.json();
         setError(`✅ Server is running: ${data.message}`);
