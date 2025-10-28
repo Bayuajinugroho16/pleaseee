@@ -23,52 +23,53 @@ const AdminDatabase = () => {
     }
   }, [isAdmin, navigate]);
 
+  // Fetch all bookings + bundle orders
   useEffect(() => {
     if (isAdmin) fetchAllData();
   }, [isAdmin]);
 
   const fetchAllData = async () => {
-  try {
-    setLoading(true);
-    setError("");
-    
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("Admin token not found");
+    try {
+      setLoading(true);
+      setError("");
 
-    // Ambil bookings dan bundle orders sekaligus
-    const [bookingsRes, bundleRes] = await Promise.all([
-      fetch("https://beckendflyio.vercel.app/api/admin/all-bookings", {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-      fetch("https://beckendflyio.vercel.app/api/bookings/bundle-orders", {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-    ]);
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Admin token not found");
 
-    if (!bookingsRes.ok) {
-      const err = await bookingsRes.json().catch(() => ({}));
-      throw new Error(err.message || "Failed to fetch regular bookings");
+      const [bookingsRes, bundleRes] = await Promise.all([
+        fetch("https://beckendflyio.vercel.app/api/admin/all-bookings", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch("https://beckendflyio.vercel.app/api/bookings/bundle-orders", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      if (!bookingsRes.ok) {
+        const err = await bookingsRes.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to fetch regular bookings");
+      }
+
+      if (!bundleRes.ok) {
+        const err = await bundleRes.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to fetch bundle orders");
+      }
+
+      const bookingsData = await bookingsRes.json();
+      const bundleData = await bundleRes.json();
+
+      console.log("📨 Fetched regular bookings:", bookingsData.data);
+      console.log("📦 Fetched bundle orders:", bundleData.data);
+
+      setBookings(bookingsData.data || []);
+      setBundleOrders(bundleData.data || []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    if (!bundleRes.ok) {
-      const err = await bundleRes.json().catch(() => ({}));
-      throw new Error(err.message || "Failed to fetch bundle orders");
-    }
-
-    const bookingsData = await bookingsRes.json();
-    const bundleData = await bundleRes.json();
-
-    // Pastikan data array
-    setBookings(bookingsData.data || []);
-    setBundleOrders(bundleData.data || []);
-
-  } catch (err) {
-    console.error(err);
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // ✅ View Payment Proof
   const viewPaymentProof = async (booking) => {
@@ -95,8 +96,8 @@ const AdminDatabase = () => {
     }
   };
 
-  // ✅ Update Status
-  const updateBookingStatus = async (bookingId, newStatus) => {
+  // ✅ Update Booking Status
+  const updateBookingStatus = async (bookingReference, newStatus) => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
@@ -112,8 +113,8 @@ const AdminDatabase = () => {
       );
       const result = await res.json();
       if (result.success) {
-        alert("✅ Status updated");
-        fetchAllData();
+        console.log("✅ Status updated:", bookingReference, newStatus);
+        fetchAllData(); // refresh data setelah update
       } else alert("❌ Failed: " + result.message);
     } catch (err) {
       console.error(err);
@@ -129,11 +130,11 @@ const AdminDatabase = () => {
     );
     if (!confirmed) return;
 
-    await updateBookingStatus(selectedBooking.id, newStatus);
+    await updateBookingStatus(selectedBooking.booking_reference, newStatus);
     setShowPaymentModal(false);
   };
 
-  // Merge orders
+  // Merge regular + bundle orders
   const getAllOrders = () => {
     const regular = bookings.map((b) => ({
       ...b,
@@ -272,6 +273,7 @@ const AdminDatabase = () => {
 
         <div className="bookings-table">
           <h2>📋 All Orders</h2>
+          {error && <p className="error">{error}</p>}
           {allOrders.length === 0 ? (
             <p>No orders</p>
           ) : (
@@ -312,7 +314,9 @@ const AdminDatabase = () => {
                     <td>
                       <select
                         value={o.display_status}
-                        onChange={(e) => updateBookingStatus(o.booking_reference, e.target.value)}
+                        onChange={(e) =>
+                          updateBookingStatus(o.booking_reference, e.target.value)
+                        }
                       >
                         <option value="pending">Pending</option>
                         <option value="confirmed">Confirmed</option>
