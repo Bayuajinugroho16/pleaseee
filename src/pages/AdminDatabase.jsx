@@ -13,17 +13,16 @@ const AdminDatabase = () => {
   const [paymentImage, setPaymentImage] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
+
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  // ✅ Check Admin
+  // ✅ Redirect if not admin
   useEffect(() => {
-    if (!isAdmin) {
-      navigate("/home");
-    }
-  }, [isAdmin, navigate]);
+    if (!isAdmin && !loading) navigate("/home");
+  }, [isAdmin, loading, navigate]);
 
-  // Fetch all bookings + bundle orders
+  // ✅ Fetch bookings
   useEffect(() => {
     if (isAdmin) fetchAllData();
   }, [isAdmin]);
@@ -32,7 +31,6 @@ const AdminDatabase = () => {
     try {
       setLoading(true);
       setError("");
-
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Admin token not found");
 
@@ -45,21 +43,11 @@ const AdminDatabase = () => {
         }),
       ]);
 
-      if (!bookingsRes.ok) {
-        const err = await bookingsRes.json().catch(() => ({}));
-        throw new Error(err.message || "Failed to fetch regular bookings");
-      }
-
-      if (!bundleRes.ok) {
-        const err = await bundleRes.json().catch(() => ({}));
-        throw new Error(err.message || "Failed to fetch bundle orders");
-      }
+      if (!bookingsRes.ok) throw new Error("Failed to fetch bookings");
+      if (!bundleRes.ok) throw new Error("Failed to fetch bundle orders");
 
       const bookingsData = await bookingsRes.json();
       const bundleData = await bundleRes.json();
-
-      console.log("📨 Fetched regular bookings:", bookingsData.data);
-      console.log("📦 Fetched bundle orders:", bundleData.data);
 
       setBookings(bookingsData.data || []);
       setBundleOrders(bundleData.data || []);
@@ -71,7 +59,6 @@ const AdminDatabase = () => {
     }
   };
 
-  // ✅ View Payment Proof
   const viewPaymentProof = async (booking) => {
     setSelectedBooking(booking);
     setShowPaymentModal(true);
@@ -85,7 +72,6 @@ const AdminDatabase = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const result = await res.json();
-
       if (result.success) setPaymentImage(result.data.image_url);
       else setPaymentImage("not_found");
     } catch (err) {
@@ -96,7 +82,6 @@ const AdminDatabase = () => {
     }
   };
 
-  // ✅ Update Booking Status
   const updateBookingStatus = async (bookingReference, newStatus) => {
     try {
       const token = localStorage.getItem("token");
@@ -112,17 +97,14 @@ const AdminDatabase = () => {
         }
       );
       const result = await res.json();
-      if (result.success) {
-        console.log("✅ Status updated:", bookingReference, newStatus);
-        fetchAllData(); // refresh data setelah update
-      } else alert("❌ Failed: " + result.message);
+      if (result.success) fetchAllData();
+      else alert("❌ Failed: " + result.message);
     } catch (err) {
       console.error(err);
       alert("❌ Error updating status");
     }
   };
 
-  // ✅ Handle Confirm / Reject
   const handleConfirmReject = async (newStatus) => {
     if (!selectedBooking) return;
     const confirmed = window.confirm(
@@ -134,7 +116,6 @@ const AdminDatabase = () => {
     setShowPaymentModal(false);
   };
 
-  // Merge regular + bundle orders
   const getAllOrders = () => {
     const regular = bookings.map((b) => ({
       ...b,
@@ -165,174 +146,63 @@ const AdminDatabase = () => {
 
   const allOrders = getAllOrders();
 
-  if (!isAdmin) {
-    return (
-      <div className="admin-container">
-        <Navigation />
-        <h1>🚫 Access Denied</h1>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="admin-container">
-        <Navigation />
-        <div className="loading">
-          <div className="spinner"></div> Loading database data...
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="admin-container">Loading...</div>;
 
   return (
     <div className="admin-container">
       <Navigation />
+      <h1>🗃️ Database Viewer</h1>
+      <p>Logged in as: {user?.username}</p>
+      <button onClick={fetchAllData}>🔄 Refresh Data</button>
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {/* Payment Modal */}
-      {showPaymentModal && (
-        <div className="modal-overlay">
-          <div className="payment-modal">
-            <div className="modal-header">
-              <h3>💰 Payment Proof - {selectedBooking?.customer_name}</h3>
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="close-btn"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="modal-content">
-              <p>
-                <strong>Customer:</strong> {selectedBooking?.customer_name}
-              </p>
-              <p>
-                <strong>Movie:</strong> {selectedBooking?.movie_title}
-              </p>
-              <p>
-                <strong>Amount:</strong> Rp{" "}
-                {selectedBooking?.total_amount?.toLocaleString()}
-              </p>
-              <p>
-                <strong>Status:</strong> {selectedBooking?.status}
-              </p>
-
-              {imageLoading ? (
-                <div className="spinner"></div>
-              ) : paymentImage === "not_found" ? (
-                <p>No payment proof found</p>
-              ) : paymentImage === "error" ? (
-                <p>Error loading image</p>
-              ) : (
-                <div>
-                  <img
-                    src={paymentImage}
-                    alt="Payment Proof"
-                    className="payment-image"
-                  />
-                  <button onClick={() => window.open(paymentImage, "_blank")}>
-                    🔍 Open Full Size
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="modal-actions">
-              <button onClick={() => setShowPaymentModal(false)}>Close</button>
-              {paymentImage &&
-                paymentImage !== "error" &&
-                paymentImage !== "not_found" && (
-                  <>
-                    <button
-                      className="confirm-btn"
-                      onClick={() => handleConfirmReject("confirmed")}
-                    >
-                      ✅ Confirm
-                    </button>
-                    <button
-                      className="reject-btn"
-                      onClick={() => handleConfirmReject("rejected")}
-                    >
-                      ❌ Reject
-                    </button>
-                  </>
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>ID</th>
+            <th>Customer</th>
+            <th>Movie/Bundle</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Payment Proof</th>
+            <th>Actions</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {allOrders.map((o, i) => (
+            <tr key={`${o.order_type}-${o.id || i}`}>
+              <td>{o.order_type === "bundle" ? "🎁 Bundle" : "🎬 Movie"}</td>
+              <td>{o.id}</td>
+              <td>{o.display_customer}</td>
+              <td>{o.display_movie}</td>
+              <td>Rp {o.display_amount?.toLocaleString()}</td>
+              <td>{o.display_status}</td>
+              <td>
+                {o.has_payment_image ? (
+                  <button onClick={() => viewPaymentProof(o)}>👁️ View Proof</button>
+                ) : (
+                  "❌ No proof"
                 )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="admin-content">
-        <h1>🗃️ Database Viewer</h1>
-        <p>Logged in as: {user?.username}</p>
-
-        <button onClick={fetchAllData} className="refresh-btn">
-          🔄 Refresh Data
-        </button>
-
-        <div className="bookings-table">
-          <h2>📋 All Orders</h2>
-          {error && <p className="error">{error}</p>}
-          {allOrders.length === 0 ? (
-            <p>No orders</p>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>ID</th>
-                  <th>Customer</th>
-                  <th>Movie/Bundle</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Payment Proof</th>
-                  <th>Actions</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allOrders.map((o, i) => (
-                  <tr key={`${o.order_type}-${o.id || i}`}>
-                    <td>
-                      {o.order_type === "bundle" ? "🎁 Bundle" : "🎬 Movie"}
-                    </td>
-                    <td>{o.id}</td>
-                    <td>{o.display_customer}</td>
-                    <td>{o.display_movie}</td>
-                    <td>Rp {o.display_amount?.toLocaleString()}</td>
-                    <td>{o.display_status}</td>
-                    <td>
-                      {o.has_payment_image ? (
-                        <button onClick={() => viewPaymentProof(o)}>
-                          👁️ View Proof
-                        </button>
-                      ) : (
-                        <span>❌ No proof</span>
-                      )}
-                    </td>
-                    <td>
-                      <select
-                        value={o.display_status}
-                        onChange={(e) =>
-                          updateBookingStatus(o.booking_reference, e.target.value)
-                        }
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="rejected">Rejected</option>
-                      </select>
-                    </td>
-                    <td>
-                      {new Date(o.display_date).toLocaleDateString("id-ID")}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
+              </td>
+              <td>
+                <select
+                  value={o.display_status}
+                  onChange={(e) =>
+                    updateBookingStatus(o.booking_reference, e.target.value)
+                  }
+                >
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </td>
+              <td>{new Date(o.display_date).toLocaleDateString("id-ID")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
