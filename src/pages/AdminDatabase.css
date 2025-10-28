@@ -582,3 +582,59 @@ th {
     max-height: 300px;
   }
 } 
+
+
+/* AdminDatabase.css - Modal Actions Buttons */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+/* Tombol Close biasa */
+.close-modal-btn {
+  padding: 8px 14px;
+  background-color: #ccc;
+  color: #333;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.close-modal-btn:hover {
+  background-color: #b3b3b3;
+}
+
+/* Tombol Confirm */
+.confirm-btn {
+  padding: 8px 16px;
+  background-color: #28a745;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.confirm-btn:hover {
+  background-color: #218838;
+}
+
+/* Tombol Reject */
+.reject-btn {
+  padding: 8px 16px;
+  background-color: #dc3545;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.reject-btn:hover {
+  background-color: #c82333;
+}

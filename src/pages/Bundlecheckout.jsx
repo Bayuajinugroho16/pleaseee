@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navigation from "../components/Navigation";
 import "./Bundlecheckout.css";
-import { supabase } from "../supabaseClient";
+import { supabase } from "../lib/supabaseClient";
+
 
 const BundleCheckout = () => {
   const location = useLocation();
@@ -558,7 +559,7 @@ const BundleCheckout = () => {
 
                 {!qrImageError ? (
                   <img
-                    src="https://beckendflyio.vercel.app/images/gopay1-qr.jpg"
+                    src= "/images/gopay1-qr.jpg"
                     alt="QRIS GoPay"
                     className="qris-image"
                     onError={() => {
