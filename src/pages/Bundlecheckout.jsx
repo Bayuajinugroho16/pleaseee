@@ -102,7 +102,7 @@ const handleFileUpload = (e) => {
 
   try {
     // 1️⃣ CREATE ORDER DI MYSQL
-    const resOrder = await fetch(`${import.meta.env.VITE_API_URL}/api/bundle/create-order`, {
+    const resOrder = await fetch(`${import.meta.env.VITE_API_URL}/bundle/create-order`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
