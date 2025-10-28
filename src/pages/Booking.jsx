@@ -139,133 +139,95 @@ const Booking = () => {
     }
   };
 
-  const handleBooking = async () => {
-    try {
-      // ✅ STEP 1: REFRESH DATA KURSI SEBELUM VALIDASI
-      console.log('🔄 Step 1: Refreshing seat data before validation...');
-      await refreshSeatData();
+const handleBooking = async () => {
+  try {
+    // ✅ STEP 1: REFRESH DATA KURSI SEBELUM VALIDASI
+    console.log('🔄 Step 1: Refreshing seat data before validation...');
+    await refreshSeatData();
 
-      // ✅ STEP 2: VALIDASI DATA
-      const errors = [];
-      
-      if (!customerInfo.name?.trim()) errors.push('Nama lengkap');
-      if (!customerInfo.email?.trim()) errors.push('Email');
-      if (!customerInfo.phone?.trim()) errors.push('Nomor HP');
-      if (!movie?.title) errors.push('Film');
-      if (!showtime) errors.push('Jam tayang');
-      if (selectedSeats.length === 0) errors.push('Kursi');
-      
-      if (errors.length > 0) {
-        alert(`❌ Data berikut masih kosong:\n${errors.join('\n')}`);
-        return;
-      }
-      
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(customerInfo.email)) {
-        alert('❌ Format email tidak valid');
-        return;
-      }
-
-      // ✅ STEP 3: VALIDASI MANUAL - CEK KURSI YANG DIPILIH
-      console.log('🎯 Validating selected seats:', selectedSeats);
-      
-      // Cek langsung ke API apakah kursi masih available
-      const showtimeId = findShowtimeId(showtime);
-      const checkResponse = await fetch(
-        `https://beckendflyio.vercel.app/api/bookings/occupied-seats?showtime_id=${showtimeId}&movie_title=${encodeURIComponent(movie.title)}`
-      );
-      
-      if (checkResponse.ok) {
-        const checkData = await checkResponse.json();
-        const currentOccupiedSeats = checkData.data || [];
-        
-        console.log('📋 Current occupied seats from API:', currentOccupiedSeats);
-        console.log('✅ Selected seats to check:', selectedSeats);
-        
-        // Cek jika ada kursi yang sudah terisi
-        const alreadyBooked = selectedSeats.filter(seat => currentOccupiedSeats.includes(seat));
-        
-        if (alreadyBooked.length > 0) {
-          alert(`❌ Kursi ${alreadyBooked.join(', ')} sudah dipesan oleh orang lain. Silakan pilih kursi lain.`);
-          
-          // Refresh SeatSelector untuk update tampilan
-          setSeatRefreshTrigger(prev => prev + 1);
-          return;
-        }
-      }
-
-      // ✅ STEP 4: PREPARE DATA UNTUK BOOKING - PERBAIKAN DI SINI
-      const bookingData = {
-        showtime_id: findShowtimeId(showtime),
-        seat_numbers: selectedSeats,
-        customer_name: customerInfo.name.trim(), // ✅ INI SEKARANG AUTO DARI USERNAME LOGIN
-        customer_email: customerInfo.email.trim(),
-        customer_phone: customerInfo.phone.trim(),
-        movie_title: movie.title,
-        total_amount: calculateTotalPrice()
-      };
-
-      console.log('📦 Sending booking data to backend:', bookingData);
-      console.log('👤 Customer name (from login):', customerInfo.name);
-      console.log('🔐 Logged in user:', user.username);
-
-      setLoading(true);
-      
-      // ✅ STEP 5: KIRIM BOOKING REQUEST
-      const response = await fetch('https://beckendflyio.vercel.app/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bookingData)
-      });
-
-      console.log('📥 Response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Server response error:', errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        console.log('✅ Booking created (PENDING):', result.data);
-        
-        // ✅ REDIRECT KE HALAMAN PEMBAYARAN
-        navigate('/payment', { 
-          state: { 
-            pendingBooking: {
-              ...result.data,
-              showtime: showtime,
-              movie_title: movie.title
-            }
-          } 
-        });
-      } else {
-        throw new Error(result.message || 'Booking failed');
-      }
-      
-    } catch (error) {
-      console.error('❌ Booking error:', error);
-      
-      if (error.message.includes('already booked')) {
-        alert('❌ Beberapa kursi sudah dipesan. Silakan pilih kursi lain.');
-        // Refresh data kursi
-        refreshSeatData();
-      } else if (error.message.includes('HTTP 400')) {
-        alert('❌ Data tidak valid. Silakan periksa kembali.');
-      } else if (error.message.includes('HTTP 500')) {
-        alert('❌ Server error. Silakan coba lagi.');
-      } else {
-        alert(`❌ Booking gagal: ${error.message}`);
-      }
-    } finally {
-      setLoading(false);
+    // ✅ STEP 2: VALIDASI DATA
+    const errors = [];
+    
+    if (!customerInfo.name?.trim()) errors.push('Nama lengkap');
+    if (!customerInfo.email?.trim()) errors.push('Email');
+    if (!customerInfo.phone?.trim()) errors.push('Nomor HP');
+    if (!movie?.title) errors.push('Film');
+    if (!showtime) errors.push('Jam tayang');
+    if (selectedSeats.length === 0) errors.push('Kursi');
+    
+    if (errors.length > 0) {
+      alert(`❌ Data berikut masih kosong:\n${errors.join('\n')}`);
+      return;
     }
-  };
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customerInfo.email)) {
+      alert('❌ Format email tidak valid');
+      return;
+    }
+
+    // ✅ STEP 3: VALIDASI KURSI MASIH AVAILABLE
+    console.log('🎯 Validating selected seats:', selectedSeats);
+    
+    const showtimeId = findShowtimeId(showtime);
+    const checkResponse = await fetch(
+      `https://beckendflyio.vercel.app/api/bookings/occupied-seats?showtime_id=${showtimeId}&movie_title=${encodeURIComponent(movie.title)}`
+    );
+    
+    if (checkResponse.ok) {
+      const checkData = await checkResponse.json();
+      const currentOccupiedSeats = checkData.data || [];
+      
+      console.log('📋 Current occupied seats from API:', currentOccupiedSeats);
+      console.log('✅ Selected seats to check:', selectedSeats);
+      
+      // Cek jika ada kursi yang sudah terisi
+      const alreadyBooked = selectedSeats.filter(seat => currentOccupiedSeats.includes(seat));
+      
+      if (alreadyBooked.length > 0) {
+        alert(`❌ Kursi ${alreadyBooked.join(', ')} sudah dipesan oleh orang lain. Silakan pilih kursi lain.`);
+        
+        // Refresh SeatSelector untuk update tampilan
+        setSeatRefreshTrigger(prev => prev + 1);
+        return;
+      }
+    }
+
+    // ✅ STEP 4: PREPARE DATA UNTUK PAYMENT PAGE (TIDAK CREATE BOOKING DI SINI)
+    const pendingBookingData = {
+      username: customerInfo.name.trim(),        // ✅ untuk customer_name di Payment
+      email: customerInfo.email.trim(),          // ✅ untuk customer_email di Payment  
+      phone: customerInfo.phone.trim(),
+      movie_title: movie.title,
+      showtime: showtime,
+      showtime_id: findShowtimeId(showtime),
+      seat_numbers: selectedSeats,               // ✅ array of seats
+      total_amount: calculateTotalPrice(),
+      // booking_reference dan verification_code akan digenerate di Payment
+    };
+
+    console.log('📦 Prepared data for payment page:', pendingBookingData);
+
+    // ✅ STEP 5: LANGSUNG NAVIGATE KE PAYMENT
+    console.log('🚀 Redirecting to payment page...');
+    navigate('/payment', { 
+      state: { 
+        pendingBooking: pendingBookingData
+      } 
+    });
+    
+  } catch (error) {
+    console.error('❌ Booking preparation error:', error);
+    
+    if (error.message.includes('already booked')) {
+      alert('❌ Beberapa kursi sudah dipesan. Silakan pilih kursi lain.');
+      await refreshSeatData();
+    } else {
+      alert(`❌ Gagal mempersiapkan booking: ${error.message}`);
+    }
+  }
+};
 
   const totalPrice = calculateTotalPrice();
 

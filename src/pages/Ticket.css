@@ -13,6 +13,271 @@
   margin: 0 auto;
 }
 
+/* Ticket.css - Tambahkan styles untuk berbagai status */
+
+/* Pending Verification */
+.pending-verification-section {
+  text-align: center;
+  padding: 20px;
+}
+
+.pending-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.verification-info-card {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  border-left: 4px solid #ffc107;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  text-align: left;
+}
+
+.info-item.highlight {
+  grid-column: 1 / -1;
+  background: white;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+.info-item.highlight code {
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  background: #fff3cd;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-left: 10px;
+}
+
+.verification-instructions {
+  background: #e7f3ff;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.verification-instructions ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.verification-instructions li {
+  margin: 8px 0;
+}
+
+/* Pending Payment */
+.pending-payment-section {
+  text-align: center;
+  padding: 20px;
+}
+
+.payment-info-card {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  border-left: 4px solid #17a2b8;
+}
+
+.payment-instructions {
+  background: #d1ecf1;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.payment-instructions ol {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.payment-instructions li {
+  margin: 8px 0;
+}
+
+.payment-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.proceed-payment-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.cancel-booking-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+/* Other Status */
+.other-status-section {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.status-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+/* Status Badges */
+.status-confirmed {
+  color: #155724;
+  background: #d4edda;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.status-pending {
+  color: #856404;
+  background: #fff3cd;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+
+/* Ticket.css - Tambahkan styles ini */
+
+.ticket-codes-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  border: 2px solid #e9ecef;
+}
+
+.code-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0;
+  padding: 10px;
+  background: white;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+}
+
+.code-label {
+  font-weight: bold;
+  color: #495057;
+}
+
+.code-value {
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  padding: 5px 10px;
+  border-radius: 4px;
+}
+
+.code-value.reference {
+  color: #28a745;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+}
+
+.code-value.verification {
+  color: #dc3545;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+}
+
+.important-instructions {
+  background: #fff3cd;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  border: 1px solid #ffeaa7;
+}
+
+.instructions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.instruction-item {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #dee2e6;
+}
+
+.instruction-item code {
+  display: block;
+  font-family: 'Courier New', monospace;
+  font-size: 1.2em;
+  font-weight: bold;
+  margin: 10px 0;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.instruction-item small {
+  color: #6c757d;
+  font-size: 0.9em;
+}
+
+.payment-proof-section {
+  margin: 15px 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #17a2b8;
+}
+
+.payment-proof-image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  margin-top: 10px;
+}
+
+.status-pending_verification {
+  color: #856404;
+  background: #fff3cd;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.status-confirmed {
+  color: #155724;
+  background: #d4edda;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+}
 /* No Ticket Data */
 .no-ticket-data {
   text-align: center;

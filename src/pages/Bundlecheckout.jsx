@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // ✅ IMPORT AUTH CONTEXT
+import { useAuth } from '../context/AuthContext';
 import Navigation from '../components/Navigation';
 import './Bundlecheckout.css';
 
@@ -9,7 +9,6 @@ const BundleCheckout = () => {
   const navigate = useNavigate();
   const { bundle } = location.state || {};
 
-  // ✅ GUNAKAN AUTH CONTEXT UNTUK MENDAPATKAN DATA USER
   const { user, isAuthenticated } = useAuth();
 
   const [customerData, setCustomerData] = useState({
@@ -27,7 +26,7 @@ const BundleCheckout = () => {
   const [orderStatus, setOrderStatus] = useState(null);
   const [orderData, setOrderData] = useState(null);
 
-  // ✅ EFFECT UNTUK AUTO-FILL DATA DARI USER YANG LOGIN
+  // ✅ PERBAIKAN: Effect untuk auto-fill data user
   useEffect(() => {
     console.log('🔍 Checking authentication...');
     console.log('User from AuthContext:', user);
@@ -40,11 +39,10 @@ const BundleCheckout = () => {
       return;
     }
 
-    // ✅ AUTO-FILL DATA CUSTOMER DARI USER YANG LOGIN
-    console.log('✅ User authenticated, auto-filling data...');
+    // ✅ PERBAIKAN: Auto-fill data dengan validasi yang lebih baik
     setCustomerData(prev => ({
       ...prev,
-      name: user.username || user.name || '', // ✅ GUNAKAN USERNAME DARI LOGIN
+      name: user.username || user.name || user.email?.split('@')[0] || 'Customer',
       phone: user.phone || '',
       email: user.email || ''
     }));
@@ -74,7 +72,6 @@ const BundleCheckout = () => {
     );
   }
 
-  // ✅ TAMPILAN LOADING JIKA BELUM ADA DATA USER
   if (!user || !isAuthenticated) {
     return (
       <div className="bundle-checkout-container">
@@ -90,7 +87,6 @@ const BundleCheckout = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
-    // ✅ HANYA ALLOW PHONE DAN EMAIL UNTUK DIUBAH, NAME TIDAK BISA DIUBAH
     if (name !== 'name') {
       setCustomerData(prev => ({
         ...prev,
@@ -99,7 +95,7 @@ const BundleCheckout = () => {
     }
   };
 
-  // Generate unique reference untuk bundle order
+  // ✅ PERBAIKAN: Generate reference yang lebih robust
   const generateBundleReference = () => {
     const timestamp = new Date().getTime();
     const random = Math.floor(Math.random() * 1000);
@@ -110,14 +106,12 @@ const BundleCheckout = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validasi file type
     const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
       alert('Hanya file JPG, PNG, atau PDF yang diizinkan');
       return;
     }
 
-    // Validasi file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('Ukuran file maksimal 5MB');
       return;
@@ -137,8 +131,6 @@ const BundleCheckout = () => {
       setPaymentProof(fileInfo);
       console.log('✅ File ready for upload:', file.name);
       
-      setShowConfirmation(true);
-      
     } catch (error) {
       console.error('❌ File processing error:', error);
       alert('Gagal memproses file. Silakan coba lagi.');
@@ -147,15 +139,16 @@ const BundleCheckout = () => {
     }
   };
 
+  // ✅ PERBAIKAN: Fungsi save order dengan error handling yang lebih baik
   const saveBundleOrderToDatabase = async (orderData) => {
     try {
-      console.log('💾 Saving bundle order with payment proof...');
+      console.log('💾 Saving bundle order...');
       
       const requestData = {
         order_reference: orderData.order_reference,
         bundle_id: orderData.bundleId,
         bundle_name: orderData.bundleName,
-        bundle_description: orderData.bundleDescription,
+        bundle_description: orderData.bundleDescription || '',
         bundle_price: orderData.bundlePrice,
         original_price: orderData.originalPrice,
         savings: orderData.savings,
@@ -165,12 +158,11 @@ const BundleCheckout = () => {
         customer_phone: orderData.customerPhone,
         customer_email: orderData.customerEmail,
         payment_proof: orderData.paymentProof,
-        user_id: user?.id || user?._id, // ✅ GUNAKAN USER ID DARI CONTEXT
-        status: 'confirmed'
+        user_id: user?.id || user?._id || 'unknown',
+        status: 'pending' // ✅ UBAH KE PENDING DULU
       };
 
       console.log('📤 Sending to endpoint: /api/bookings/create-bundle-order');
-      console.log('📦 Order data:', requestData);
       
       const response = await fetch('https://beckendflyio.vercel.app/api/bookings/create-bundle-order', {
         method: 'POST',
@@ -198,14 +190,14 @@ const BundleCheckout = () => {
     }
   };
 
+  // ✅ PERBAIKAN: Fungsi confirm payment yang lebih sederhana
   const handleConfirmPayment = async () => {
     if (!paymentProof) {
       alert('Silakan upload bukti pembayaran terlebih dahulu');
       return;
     }
 
-    // Validasi data customer
-    if (!customerData.name || !customerData.phone) {
+    if (!customerData.phone) {
       alert('Nomor handphone wajib diisi');
       return;
     }
@@ -217,25 +209,21 @@ const BundleCheckout = () => {
       const totalPrice = bundle.bundlePrice * customerData.quantity;
 
       console.log('🚀 Starting bundle payment process...');
-      console.log('📝 Order Reference:', orderReference);
-      console.log('👤 Customer Name (auto-filled):', customerData.name);
-      console.log('🔐 Logged in User:', user.username);
-
-      // ✅ STEP 1: GENERATE FILENAME UNTUK DISIMPAN DI DATABASE
+      
+      // ✅ STEP 1: GENERATE FILENAME
       let paymentProofFileName = null;
       
       if (paymentProof.file) {
         const timestamp = new Date().getTime();
         const random = Math.floor(Math.random() * 1000);
         const fileExtension = paymentProof.name.split('.').pop();
-        paymentProofFileName = `payment-${timestamp}-${random}.${fileExtension}`;
-        console.log('📁 Generated payment proof filename:', paymentProofFileName);
+        paymentProofFileName = `bundle-payment-${timestamp}-${random}.${fileExtension}`;
       } else {
         paymentProofFileName = paymentProof.name;
       }
 
-      // ✅ STEP 2: SIMPAN ORDER KE DATABASE DENGAN PAYMENT PROOF
-      const orderData = {
+      // ✅ STEP 2: SIMPAN ORDER KE DATABASE
+      const orderPayload = {
         order_reference: orderReference,
         bundleId: bundle.id,
         bundleName: bundle.name,
@@ -245,48 +233,43 @@ const BundleCheckout = () => {
         savings: bundle.savings,
         quantity: customerData.quantity,
         totalPrice: totalPrice,
-        customerName: customerData.name, // ✅ NAMA AUTO DARI USER LOGIN
+        customerName: customerData.name,
         customerPhone: customerData.phone,
         customerEmail: customerData.email || '',
         paymentProof: paymentProofFileName,
-        status: 'confirmed'
+        status: 'pending'
       };
 
-      console.log('💾 Saving bundle order with data:', orderData);
-
-      // Simpan ke database
-      const saveResult = await saveBundleOrderToDatabase(orderData);
+      console.log('💾 Saving bundle order...');
+      const saveResult = await saveBundleOrderToDatabase(orderPayload);
       
       if (saveResult.success) {
         console.log('🎉 Bundle order saved successfully!');
         
-        // ✅ STEP 3: UPLOAD FILE PAYMENT PROOF (OPTIONAL)
+        // ✅ STEP 3: UPLOAD FILE PAYMENT PROOF (OPSIONAL)
         if (paymentProof.file) {
           try {
             const formData = new FormData();
             formData.append('payment_proof', paymentProof.file);
             formData.append('order_reference', orderReference);
             
-            console.log('📤 Attempting to upload payment proof...');
+            console.log('📤 Uploading payment proof...');
             const uploadResponse = await fetch('https://beckendflyio.vercel.app/api/bookings/bundle-order/upload-payment', {
               method: 'POST',
               body: formData,
             });
             
-            console.log('📥 Upload response status:', uploadResponse.status);
-            
             if (uploadResponse.ok) {
-              const uploadResult = await uploadResponse.json();
-              console.log('✅ Payment proof uploaded successfully:', uploadResult.fileName);
+              console.log('✅ Payment proof uploaded successfully');
             } else {
               console.warn('⚠️ Payment proof upload failed, but order was saved');
             }
           } catch (uploadError) {
-            console.warn('⚠️ Payment proof upload error, but order was saved:', uploadError.message);
+            console.warn('⚠️ Payment proof upload error:', uploadError.message);
           }
         }
 
-        setOrderData(saveResult.data);
+        setOrderData(saveResult.data || orderPayload);
         setOrderStatus('confirmed');
         
       } else {
@@ -305,11 +288,9 @@ const BundleCheckout = () => {
 
   const handleCancelConfirmation = () => {
     setShowConfirmation(false);
-    setPaymentProof(null);
   };
 
   const handleNewOrder = () => {
-    // ✅ RESET TAPI NAMA TETAP DARI USER LOGIN
     setCustomerData(prev => ({
       ...prev,
       phone: user?.phone || '',
@@ -333,24 +314,31 @@ const BundleCheckout = () => {
           <div className="confirmation-modal">
             <div className="modal-header">
               <div className="modal-icon">✅</div>
-              <h3>Upload Berhasil!</h3>
-              <p className="modal-subtitle">Bukti pembayaran telah diupload</p>
+              <h3>Konfirmasi Pembayaran</h3>
+              <p className="modal-subtitle">Pastikan data sudah benar</p>
             </div>
             
             <div className="modal-content">
-              <p>Apakah Anda ingin melanjutkan konfirmasi pembayaran?</p>
+              <div className="order-summary-confirm">
+                <h4>Detail Order:</h4>
+                <p><strong>Bundle:</strong> {bundle.name}</p>
+                <p><strong>Quantity:</strong> {customerData.quantity}</p>
+                <p><strong>Total:</strong> Rp {totalPrice.toLocaleString()}</p>
+              </div>
               
               <div className="customer-info-confirm">
                 <h4>Data Customer:</h4>
-                <p><strong>Nama:</strong> {customerData.name} <span className="auto-filled-badge">(Auto)</span></p>
+                <p><strong>Nama:</strong> {customerData.name}</p>
                 <p><strong>Phone:</strong> {customerData.phone}</p>
                 <p><strong>Email:</strong> {customerData.email || '-'}</p>
               </div>
               
-              <div className="file-info">
-                <strong>File:</strong> 
-                <span>{paymentProof?.name}</span>
-              </div>
+              {paymentProof && (
+                <div className="file-info">
+                  <strong>Bukti Pembayaran:</strong> 
+                  <span>{paymentProof.name}</span>
+                </div>
+              )}
             </div>
             
             <div className="modal-actions">
@@ -372,7 +360,7 @@ const BundleCheckout = () => {
                     Memproses...
                   </>
                 ) : (
-                  'Ya, Konfirmasi Sekarang'
+                  'Konfirmasi Pembayaran'
                 )}
               </button>
             </div>
@@ -385,15 +373,11 @@ const BundleCheckout = () => {
           <h1>🎫 Checkout Bundle Ticket</h1>
           <p>Lengkapi data diri dan upload bukti pembayaran</p>
           
-          {/* ✅ INFO USER YANG LOGIN */}
           {user && (
             <div className="user-login-info">
               <p>
                 <strong>Anda login sebagai:</strong> {user.username} 
                 {user.email && ` | ${user.email}`}
-              </p>
-              <p className="name-auto-info">
-                ✅ <strong>Nama telah diisi otomatis sesuai akun login</strong>
               </p>
             </div>
           )}
@@ -406,23 +390,35 @@ const BundleCheckout = () => {
             <h2>Pembayaran Berhasil!</h2>
             <div className="success-details">
               <p><strong>Order Reference:</strong> {orderData.order_reference}</p>
-              <p><strong>Status:</strong> <span className="status-confirmed">Confirmed</span></p>
               <p><strong>Bundle:</strong> {orderData.bundle_name}</p>
               <p><strong>Total:</strong> Rp {orderData.total_price?.toLocaleString()}</p>
               <p><strong>Customer:</strong> {orderData.customer_name}</p>
+              <p><strong>Status:</strong> <span className="status-confirmed">Menunggu Verifikasi</span></p>
             </div>
             <div className="success-actions">
               <button onClick={() => navigate('/my-tickets')} className="view-tickets-btn">
                 Lihat Tiket Saya
               </button>
               <button onClick={handleNewOrder} className="new-order-btn">
-                Buat Order Baru
+                Beli Bundle Lain
               </button>
             </div>
           </div>
         )}
 
-        {/* ✅ TAMPILAN FORM */}
+        {/* ✅ TAMPILAN GAGAL */}
+        {orderStatus === 'failed' && (
+          <div className="error-message">
+            <div className="error-icon">❌</div>
+            <h2>Pembayaran Gagal</h2>
+            <p>Silakan coba lagi atau hubungi customer service</p>
+            <button onClick={handleNewOrder} className="retry-btn">
+              Coba Lagi
+            </button>
+          </div>
+        )}
+
+        {/* ✅ TAMPILAN FORM UTAMA */}
         {(orderStatus === null || orderStatus === 'failed') && (
           <div className="checkout-layout">
             {/* Order Summary */}
@@ -439,7 +435,6 @@ const BundleCheckout = () => {
                 />
                 <div className="bundle-info">
                   <h4>{bundle.name}</h4>
-                  <p>{bundle.description}</p>
                   <div className="price-detail">
                     <span className="original-price">
                       Rp {bundle.originalPrice.toLocaleString()}
@@ -492,56 +487,40 @@ const BundleCheckout = () => {
                 </div>
               </div>
 
-              {/* QRIS GoPay Section */}
-<div className="qris-section">
-  <h4>💰 Scan QRIS GoPay</h4>
-  <p className="qris-description">
-    Scan QR code below using GoPay app
-  </p>
-  
-  {!qrImageError ? (
-    <img 
-      src="https://beckendflyio.vercel.app/public/images/gopay1-qr.jpg"  // ✅ URL BARU DARI IMGBB
-      alt="QRIS GoPay" 
-      className="qris-image"
-      onError={() => {
-        console.log('❌ QR image failed to load');
-        setQrImageError(true);
-      }}
-      onLoad={() => console.log('✅ QR image loaded successfully')}
-    />
-  ) : (
-    <div className="qris-fallback">
-      <div className="fallback-icon">❌</div>
-      <p className="fallback-text">
-        QR Code Image Not Found<br/>
-        <span className="fallback-subtext">Check backend public folder</span>
-      </p>
-    </div>
-  )}
+              {/* QRIS Section */}
+              <div className="qris-section">
+                <h4>💰 Scan QRIS GoPay</h4>
+                <p className="qris-description">
+                  Scan QR code below using GoPay app
+                </p>
+                
+                {!qrImageError ? (
+                  <img 
+                    src="https://beckendflyio.vercel.app/public/images/gopay1-qr.jpg"
+                    alt="QRIS GoPay" 
+                    className="qris-image"
+                    onError={() => {
+                      console.log('❌ QR image failed to load');
+                      setQrImageError(true);
+                    }}
+                    onLoad={() => console.log('✅ QR image loaded successfully')}
+                  />
+                ) : (
+                  <div className="qris-fallback">
+                    <div className="fallback-icon">💰</div>
+                    <p className="fallback-text">
+                      Transfer ke:<br/>
+                      <strong>BCA: 1234 5678 9012</strong><br/>
+                      <strong>a.n UNEJ CINEMA</strong>
+                    </p>
+                  </div>
+                )}
 
-  <p className="payment-amount">
-    Amount: Rp {pendingBooking.total_amount?.toLocaleString()}
-  </p>
-</div>  
                 <p className="payment-amount">
                   Amount: Rp {totalPrice.toLocaleString()}
                 </p>
               </div>
-
-              {/* Payment Instructions */}
-              {/* <div className="payment-instructions">
-                <h4>💳 Instruksi Pembayaran</h4>
-                <div className="bank-details">
-                  <p><strong>Bank BCA</strong></p>
-                  <p>No. Rekening: <strong>1234 5678 9012</strong></p>
-                  <p>Atas Nama: <strong>UNEJ CINEMA</strong></p>
-                </div>
-                <p className="instruction-note">
-                  Transfer sesuai total pembayaran dan upload bukti transfer di form sebelah
-                </p>
-              </div> */}
-            {/* </div> */}
+            </div>
 
             {/* Customer Form & Payment Upload */}
             <div className="customer-form">
@@ -556,12 +535,12 @@ const BundleCheckout = () => {
                     value={customerData.name}
                     onChange={handleInputChange}
                     required
-                    disabled // ✅ INPUT NAMA DISABLED (TIDAK BISA DIUBAH)
+                    disabled
                     className="disabled-input"
                     placeholder="Nama diisi otomatis dari akun login"
                   />
                   <div className="field-info">
-                    ✅ Nama diambil otomatis dari username login: <strong>{user.username}</strong>
+                    ✅ Nama diambil dari akun login
                   </div>
                 </div>
 
@@ -579,23 +558,20 @@ const BundleCheckout = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="email">Alamat</label>
+                  <label htmlFor="email">Email</label>
                   <input
                     type="email"
                     id="email"
                     name="email"
                     value={customerData.email}
                     onChange={handleInputChange}
-                    placeholder="Masukkan Alamat Lengkap "
+                    placeholder="email@example.com"
                   />
                 </div>
 
                 {/* Upload Payment Proof */}
                 <div className="upload-section">
                   <h4>📎 Upload Bukti Pembayaran *</h4>
-                  <p className="upload-description">
-                    Upload screenshot bukti transfer pembayaran Anda
-                  </p>
                   
                   <div className="file-input-container">
                     <input
@@ -611,51 +587,25 @@ const BundleCheckout = () => {
                       className={`file-input-label ${uploading || paymentProof ? "disabled" : ""}`}
                     >
                       <span className="icon">📁</span>
-                      {uploading ? "Mengupload..." : paymentProof ? "Uploaded ✓" : "Pilih File"}
+                      {uploading ? "Mengupload..." : paymentProof ? "File Terupload ✓" : "Pilih File"}
                     </label>
-                    <span className="file-input-info">
-                      Format: JPG, PNG, PDF (max 5MB)
-                    </span>
                   </div>
 
-                  {uploading && (
-                    <div className="uploading-indicator">
-                      <div className="uploading-spinner"></div>
-                      <span>Sedang mengupload...</span>
-                    </div>
-                  )}
-
-                  {paymentProof && !uploading && !showConfirmation && (
+                  {paymentProof && !uploading && (
                     <div className="upload-success">
                       <div className="success-icon">✅</div>
                       <div className="file-info">
-                        <strong>File terupload:</strong> {paymentProof.name}
-                        <br />
-                        <small>
-                          Tipe: {paymentProof.type} | 
-                          Size: {(paymentProof.size / 1024 / 1024).toFixed(2)} MB
-                        </small>
+                        <strong>File:</strong> {paymentProof.name}
                       </div>
                       <button 
                         onClick={() => setShowConfirmation(true)}
                         className="proceed-btn"
+                        disabled={!customerData.phone}
                       >
-                        Lanjutkan Konfirmasi
+                        Konfirmasi Pembayaran
                       </button>
                     </div>
                   )}
-                </div>
-
-                {/* Information */}
-                <div className="payment-info">
-                  <p>⚠️ <strong>Important:</strong></p>
-                  <ul>
-                    <li>Complete payment within 30 minutes</li>
-                    <li>Upload proof of payment after transferring</li>
-                    <li>Bundle akan aktif setelah verifikasi pembayaran</li>
-                    <li>Save Your e-ticket and Reedem it on the day of show</li>
-                    <li>Pemesanan setelah 31 Oktober 2025 akan tergolong sebagai pre-order</li>
-                  </ul>
                 </div>
 
                 <div className="form-actions">
@@ -666,18 +616,6 @@ const BundleCheckout = () => {
                   >
                     Kembali
                   </button>
-                  
-                  {/* Tombol manual confirm */}
-                  {paymentProof && !showConfirmation && (
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmation(true)}
-                      className="pay-btn"
-                      disabled={!customerData.phone} // ✅ HANYA VALIDASI PHONE SAJA
-                    >
-                      Konfirmasi Pembayaran
-                    </button>
-                  )}
                 </div>
               </form>
             </div>

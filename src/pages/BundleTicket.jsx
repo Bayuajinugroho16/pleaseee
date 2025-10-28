@@ -6,6 +6,9 @@ import './BundleTicket.css';
 const BundleTicket = () => {
   const navigate = useNavigate();
 
+  // Deklarasi variabel pendingBooking untuk menghindari error
+  let pendingBooking = null;
+
   const bundleItems = [
     {
       id: 1,
@@ -18,7 +21,6 @@ const BundleTicket = () => {
       features: [
         "1 Tiket Kompetisi ",
         "2 Sticker Pack", 
-        
       ],
       popular: false
     },
@@ -47,8 +49,8 @@ const BundleTicket = () => {
       features: [
         "1 Tiket Kompetisi",
         "1 Keychain",
-        " 1 Sticker Pack",
-        " 1 Pin "
+        "1 Sticker Pack",
+        "1 Pin"
       ],
       popular: true
     },
@@ -59,13 +61,12 @@ const BundleTicket = () => {
       originalPrice: 60000,
       bundlePrice: 50000,
       savings: 10000,
-      image: "https://via.placeholder.com/300x400/3498db/ffffff?text=PAKET+GROUP",
+      image: "/film/Paket3.jpg", // GANTI: dari placeholder URL yang error
       features: [
-        "1 tiket  kompetisi 1",
-        "1 tiket  kompetisi 2",
-        "1 tiket  kompetisi 3",
-        "1 tiket  kompetisi 4",
-       
+        "1 tiket kompetisi 1",
+        "1 tiket kompetisi 2", 
+        "1 tiket kompetisi 3",
+        "1 tiket kompetisi 4",
       ],
       popular: false
     },
@@ -79,9 +80,9 @@ const BundleTicket = () => {
       image: "/film/Paket8.jpg",
       features: [
         "4 tiket kompetisi",
-        "1 Sticker Pack,",
-        "1 Keychain",
-        "1 Pin "
+        "1 Sticker Pack",
+        "1 Keychain", 
+        "1 Pin"
       ],
       popular: true
     },
@@ -95,14 +96,14 @@ const BundleTicket = () => {
       image: "/film/Paket5.jpg",
       features: [
         "1 tiket kompetisi ",
-        "1 Tumblr ",
+        "1 Tumblr",
         "2 sticker pack"
       ],
       popular: false
     },
     {
       id: 7,
-      name: "Paket Main Cast",
+      name: "Paket Main Cast", 
       description: "",
       originalPrice: 150000,
       bundlePrice: 142000,
@@ -110,9 +111,8 @@ const BundleTicket = () => {
       image: "/film/Paket6.jpg",
       features: [
         "3 tiket kompetisi",
-        "1 Baju ",
+        "1 Baju",
         "1 Sticker Pack",
-       
       ],
       popular: false
     },
@@ -125,9 +125,9 @@ const BundleTicket = () => {
       savings: 10000,
       image: "/film/Paket7.jpg",
       features: [
-        "4 tiket kompetisi ",
-        "1 Baju ",
-        "1 Sticker Pack "
+        "4 tiket kompetisi",
+        "1 Baju", 
+        "1 Sticker Pack"
       ],
       popular: false
     },
@@ -147,16 +147,24 @@ const BundleTicket = () => {
     }
   ];
 
- const handleBundlePurchase = (bundle) => {
-  navigate('/bundle-checkout', {
-    state: {
-      bundle
-    }
-  });
-};
+  const handleBundlePurchase = (bundle) => {
+    // Simpan bundle ke pendingBooking sebelum navigasi
+    pendingBooking = bundle;
+    
+    navigate('/bundle-checkout', {
+      state: {
+        bundle: bundle
+      }
+    });
+  };
 
   const handleDetailClick = (bundle) => {
     navigate(`/bundle/${bundle.id}`, { state: { bundle } });
+  };
+
+  // Fallback image handler yang lebih robust
+  const handleImageError = (e) => {
+    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDMwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiPkJ1bmRsZSBJbWFnZTwvdGV4dD4KPC9zdmc+';
   };
 
   return (
@@ -166,7 +174,7 @@ const BundleTicket = () => {
       <div className="bundle-content">
         {/* Header Section */}
         <div className="bundle-header">
-          <h1> BUNDLE TICKET SPECIAL</h1>
+          <h1>BUNDLE TICKET SPECIAL</h1>
           <p>Dapatkan merchandise eksklusif dengan harga spesial!</p>
           <div className="bundle-badge">Hemat hingga 50%</div>
         </div>
@@ -182,9 +190,8 @@ const BundleTicket = () => {
                   src={bundle.image} 
                   alt={bundle.name}
                   className="bundle-image"
-                  onError={(e) => {
-                    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDMwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiPkJ1bmRsZSBJbWFnZTwvdGV4dD4KPC9zdmc+';
-                  }}
+                  onError={handleImageError}
+                  loading="lazy" // Optimasi performa
                 />
                 <div className="savings-badge">Hemat Rp {bundle.savings.toLocaleString()}</div>
               </div>
@@ -218,35 +225,11 @@ const BundleTicket = () => {
                   >
                     BELI SEKARANG
                   </button>
-                  
-                  
                 </div>
               </div>
             </div>
           ))}
         </div>
-
-        {/* Info Section
-        <div className="bundle-info">
-          <h3>✨ Mengapa Pilih Bundle Ticket?</h3>
-          <div className="benefits-grid">
-            <div className="benefit-item">
-              <div className="benefit-icon">💰</div>
-              <h4>Harga Terjangkau</h4>
-              <p>Dapatkan diskon khusus hingga 50% dari harga normal</p>
-            </div>
-            <div className="benefit-item">
-              <div className="benefit-icon">🎁</div>
-              <h4>Merchandise Eksklusif</h4>
-              <p>Item limited edition hanya tersedia untuk bundle</p>
-            </div>
-            <div className="benefit-item">
-              <div className="benefit-icon">⚡</div>
-              <h4>Proses Instan</h4>
-              <p>Tiket dan merchandise langsung bisa diambil setelah pembayaran</p>
-            </div>
-          </div>
-        </div> */}
       </div>
     </div>
   );

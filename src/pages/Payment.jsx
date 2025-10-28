@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navigation from "../components/Navigation";
 import "./Payment.css";
+import gopayQR from "../../public/images/gopay1-qr.jpg";
 
 const Payment = () => {
   const [loading, setLoading] = useState(false);
@@ -9,192 +10,211 @@ const Payment = () => {
   const [uploading, setUploading] = useState(false);
   const [qrImageError, setQrImageError] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingBooking, setPendingBooking] = useState(null);
 
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { pendingBooking } = location.state || {};
-
-  // Debug info
+  // Initialize pendingBooking from location state
   useEffect(() => {
-    console.log("🔍 Payment Debug:");
-    console.log("Pending Booking:", pendingBooking);
-  }, []);
-
- const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      console.log("📁 File Selected:", file.name);
-      setUploading(true);
-
-      try {
-        // ✅ GUNAKAN ENDPOINT YANG SUDAH ADA DI SERVER
-        const formData = new FormData();
-        formData.append('payment_proof', file);
-        formData.append('booking_reference', pendingBooking.booking_reference);
-
-        console.log("📤 Uploading to:", "https://beckendflyio.vercel.app/api/upload-payment");
-
-        const response = await fetch(
-          "https://beckendflyio.vercel.app/api/upload-payment", // ✅ ENDPOINT SIMPLE
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-
-        console.log("📥 Upload Response Status:", response.status);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("❌ Upload error response:", errorText);
-          throw new Error(`Upload failed with status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log("✅ Upload Result:", result);
-
-        if (result.success) {
-          // ✅ BACA FILE UNTUK PREVIEW
-          const base64Image = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = (error) => reject(error);
-          });
-
-          setPaymentProof({
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            fileName: result.fileName,
-            base64: base64Image,
-          });
-
-          setShowConfirmation(true);
-        } else {
-          alert("Upload failed: " + result.message);
-        }
-      } catch (error) {
-        console.error("❌ Upload error:", error);
-        alert("Upload error: " + error.message);
-        
-        // ✅ FALLBACK: Coba endpoint alternatif
-        console.log("🔄 Trying fallback endpoint...");
-        try {
-          const base64Image = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result.split(',')[1]); // ambil base64 saja
-            reader.onerror = (error) => reject(error);
-          });
-
-          const fallbackResponse = await fetch(
-            "https://beckendflyio.vercel.app/api/update-payment-base64",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                booking_reference: pendingBooking.booking_reference,
-                payment_filename: file.name,
-                payment_base64: base64Image,
-                payment_mimetype: file.type,
-              }),
-            }
-          );
-
-          const fallbackResult = await fallbackResponse.json();
-          console.log("✅ Fallback upload result:", fallbackResult);
-
-          if (fallbackResult.success) {
-            setPaymentProof({
-              name: file.name,
-              type: file.type,
-              size: file.size,
-              fileName: fallbackResult.fileName,
-              base64: `data:${file.type};base64,${base64Image}`,
-            });
-            setShowConfirmation(true);
-          }
-        } catch (fallbackError) {
-          console.error("❌ Fallback also failed:", fallbackError);
-        }
-      } finally {
-        setUploading(false);
-      }
+    if (location.state?.pendingBooking) {
+      setPendingBooking(location.state.pendingBooking);
     }
-  };
+  }, [location.state]);
 
-  // Handle Confirm Payment
-   const handleConfirmPayment = async () => {
-    if (!pendingBooking) return;
-
-    if (!paymentProof) {
-      alert("Please upload payment proof first!");
-      return;
-    }
-
-    setLoading(true);
+  const handleFileUpload = async (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    console.log("📁 File Selected:", file.name);
+    setUploading(true);
 
     try {
-      const response = await fetch(
-        "https://beckendflyio.vercel.app/api/bookings/confirm-payment", // ✅ PASTIKAN ENDPOINT INI ADA
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            booking_reference: pendingBooking.booking_reference,
-          }),
-        }
-      );
-
-      // Handle jika endpoint tidak ada
-      if (response.status === 404) {
-        console.log("⚠️ Confirm payment endpoint not found, proceeding directly to ticket...");
-        navigate("/ticket", { 
-          state: { 
-            bookingData: {
-              ...pendingBooking,
-              status: 'confirmed',
-              payment_proof: paymentProof.fileName
-            } 
-          } 
-        });
+      // ✅ VALIDASI FILE
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File terlalu besar! Maksimal 5MB.");
         return;
       }
 
-      const result = await response.json();
-
-      if (result.success) {
-        setShowConfirmation(false);
-        navigate("/ticket", { state: { bookingData: result.data } });
-      } else {
-        alert(`Payment confirmation failed: ${result.message}`);
+      if (!file.type.startsWith("image/")) {
+        alert("Hanya file gambar yang diizinkan!");
+        return;
       }
-    } catch (error) {
-      console.error("❌ Payment confirmation error:", error);
-      
-      // ✅ FALLBACK: Navigate langsung ke ticket
-      console.log("🔄 Fallback: Navigating directly to ticket...");
-      setShowConfirmation(false);
-      navigate("/ticket", { 
-        state: { 
-          bookingData: {
-            ...pendingBooking,
-            status: 'confirmed',
-            payment_proof: paymentProof.fileName
-          } 
-        } 
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
+      // Generate codes
+      const bookingReference = `BK${Date.now().toString().slice(-6)}`;
+      const verificationCode = Math.floor(
+        100000 + Math.random() * 900000
+      ).toString();
+
+      // ✅ 1. DEBUG DETAIL
+      console.log("🔍 DETAIL pendingBooking:", {
+        showtime_id: pendingBooking.showtime_id,
+        username: pendingBooking.username,
+        email: pendingBooking.email,
+        seat_numbers: pendingBooking.seat_numbers,
+        total_amount: pendingBooking.total_amount,
+        movie_title: pendingBooking.movie_title,
+        phone: pendingBooking.phone
+      });
+
+      // ✅ 2. VALIDASI YANG LEBIH SIMPLE
+      if (!pendingBooking.showtime_id || !pendingBooking.username || !pendingBooking.email || 
+          !pendingBooking.seat_numbers || !pendingBooking.total_amount || !pendingBooking.movie_title) {
+        throw new Error("Data booking tidak lengkap. Pastikan semua field terisi.");
+      }
+
+      // ✅ 3. FORMAT DATA - PERBAIKI seat_numbers
+      const bookingData = {
+        showtime_id: pendingBooking.showtime_id,
+        customer_name: pendingBooking.username,
+        customer_email: pendingBooking.email,
+        customer_phone: pendingBooking.phone || "",
+        seat_numbers: pendingBooking.seat_numbers, // ✅ LANGSUNG PAKAI ARRAY, biar backend yang handle JSON
+        total_amount: parseFloat(pendingBooking.total_amount),
+        movie_title: pendingBooking.movie_title,
+        booking_reference: bookingReference,
+        verification_code: verificationCode,
+        status: "pending"
+      };
+
+      console.log("📤 Data final untuk backend:", bookingData);
+
+      // ✅ 4. KIRIM KE BACKEND
+      const bookingResponse = await fetch(
+        "https://beckendflyio.vercel.app/api/bookings",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bookingData),
+        }
+      );
+
+      const bookingResult = await bookingResponse.json();
+
+      console.log("📥 Response dari backend:", {
+        status: bookingResponse.status,
+        ok: bookingResponse.ok,
+        result: bookingResult
+      });
+
+      if (!bookingResponse.ok) {
+        throw new Error(bookingResult.message || `Error: ${bookingResponse.status}`);
+      }
+
+      console.log("✅ Booking berhasil disimpan!");
+
+      // ✅ 5. UPLOAD FILE
+      console.log("📤 Uploading payment proof...");
+
+      const formData = new FormData();
+      formData.append("payment_proof", file);
+      formData.append("booking_reference", bookingReference);
+
+      const uploadResponse = await fetch(
+        "https://beckendflyio.vercel.app/api/upload-payment",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const uploadResult = await uploadResponse.json();
+
+      console.log("📥 Upload response:", uploadResult);
+
+      if (!uploadResponse.ok) {
+        throw new Error(uploadResult.message || `Upload gagal`);
+      }
+
+      console.log("✅✅✅ FILE UPLOADED SUCCESS!");
+
+      // ✅ 6. GENERATE URL GAMBAR
+      const fileName = uploadResult.data?.fileName || uploadResult.fileName;
+      const imageUrl = fileName
+        ? `https://beckendflyio.vercel.app/bukti_pembayaran/${fileName}`
+        : null;
+
+      console.log("🖼️ Payment proof URL:", imageUrl);
+
+      // Convert file untuk preview lokal
+      const base64Image = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+      });
+
+      // ✅ 7. UPDATE STATE
+      setPendingBooking((prev) => ({
+        ...prev,
+        booking_reference: bookingReference,
+        verification_code: verificationCode,
+        status: "pending_verification",
+        payment_proof: imageUrl,
+        payment_filename: file.name,
+      }));
+
+      setPaymentProof({
+        name: file.name,
+        base64: base64Image,
+        fileUrl: imageUrl,
+      });
+
+      setShowConfirmation(true);
+
+      console.log("🎉 PROSES SELESAI!");
+
+    } catch (error) {
+      console.error("❌ ERROR DETAIL:", {
+        message: error.message,
+        name: error.name
+      });
+      alert("Error: " + error.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+};
+ // Di Payment.jsx - PERBAIKI handleConfirmPayment
+const handleConfirmPayment = async () => {
+  if (!pendingBooking) return;
+
+  if (!paymentProof) {
+    alert("Please upload payment proof first!");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    // ✅ HAPUS DUPLICATE BOOKING CREATION
+    // Booking sudah dibuat di handleFileUpload, jadi tidak perlu buat lagi
+    
+    console.log("🎫 Proceeding to ticket with booking:", {
+      booking_reference: pendingBooking.booking_reference,
+      status: pendingBooking.status
+    });
+
+    // ✅ LANGSUNG NAVIGATE KE TICKET
+    const ticketData = {
+      ...pendingBooking,
+      id: pendingBooking.id,
+      is_verified: 0,
+      booking_date: new Date().toISOString(),
+      status: "pending_verification"
+    };
+
+    setShowConfirmation(false);
+    navigate("/ticket", { state: { bookingData: ticketData } });
+    
+  } catch (error) {
+    console.error("❌ Confirmation error:", error);
+    alert("Error navigating to ticket: " + error.message);
+    setShowConfirmation(false);
+  } finally {
+    setLoading(false);
+  }
+};
   // Handle Cancel Confirmation
   const handleCancelConfirmation = () => {
     setShowConfirmation(false);
@@ -234,7 +254,12 @@ const Payment = () => {
               <div className="file-info">
                 <strong>File:</strong> {paymentProof.name}
               </div>
-              <p>Do you want to confirm payment and get your ticket now?</p>
+              <p>
+                <strong>
+                  Booking details will be available on your ticket page.
+                </strong>
+              </p>
+              <p>Do you want to proceed to your ticket now?</p>
             </div>
             <div className="modal-actions">
               <button
@@ -249,7 +274,7 @@ const Payment = () => {
                 className="confirm-btn"
                 disabled={loading}
               >
-                {loading ? "Processing..." : "Yes, Get Ticket"}
+                {loading ? "Processing..." : "Yes, View Ticket"}
               </button>
             </div>
           </div>
@@ -260,7 +285,7 @@ const Payment = () => {
         <div className="payment-content">
           <h1 className="payment-title">💳 Payment</h1>
 
-          {/* Order Summary */}
+          {/* Order Summary - TANPA booking reference & verification code */}
           <div className="order-summary-card">
             <h3>Order Summary</h3>
             <div className="order-details">
@@ -284,10 +309,7 @@ const Payment = () => {
                 <strong>Status:</strong>{" "}
                 <span className="status-pending">Waiting for Payment</span>
               </p>
-              <p>
-                <strong>Booking Reference:</strong>{" "}
-                {pendingBooking.booking_reference}
-              </p>
+              {/* ❌ HAPUS booking reference dan verification code dari sini */}
             </div>
           </div>
 
@@ -298,7 +320,7 @@ const Payment = () => {
 
             {!qrImageError ? (
               <img
-                src="https://beckendflyio.vercel.app/images/gopay1-qr.jpg"
+                src={gopayQR}
                 alt="QRIS GoPay"
                 className="qris-image"
                 onError={() => {
@@ -363,17 +385,65 @@ const Payment = () => {
               </div>
             )}
 
-            {paymentProof && paymentProof.base64 && (
+            {paymentProof && (
               <div className="payment-preview">
                 <h4>📷 Payment Proof Preview:</h4>
-                <img
-                  src={paymentProof.base64}
-                  alt="Payment Proof Preview"
-                  className="payment-preview-image"
-                />
+
+                {/* ✅ COBA TAMPILKAN DARI URL GAMBAR ASLI DULU */}
+                {paymentProof.fileUrl ? (
+                  <img
+                    src={paymentProof.fileUrl}
+                    alt="Payment Proof Preview"
+                    className="payment-preview-image"
+                    onError={(e) => {
+                      console.error("❌ URL image failed, fallback to base64");
+                      // Fallback ke base64 jika URL gagal
+                      e.target.src = paymentProof.base64;
+                    }}
+                    onLoad={() =>
+                      console.log("✅ URL image loaded successfully")
+                    }
+                  />
+                ) : (
+                  /* ✅ FALLBACK KE BASE64 PREVIEW */
+                  <img
+                    src={paymentProof.base64}
+                    alt="Payment Proof Preview"
+                    className="payment-preview-image"
+                  />
+                )}
+
                 <p>
-                  <small>File: {paymentProof.name}</small>
+                  <small>
+                    File: {paymentProof.name}
+                    {paymentProof.fileUrl && (
+                      <span style={{ marginLeft: "10px" }}>
+                        |{" "}
+                        <a
+                          href={paymentProof.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: "#007bff", textDecoration: "none" }}
+                        >
+                          🔗 Open Full Size
+                        </a>
+                      </span>
+                    )}
+                  </small>
                 </p>
+
+                {/* ✅ DEBUG INFO */}
+                <div
+                  style={{ fontSize: "12px", color: "#666", marginTop: "5px" }}
+                >
+                  {paymentProof.fileUrl && (
+                    <div>URL: {paymentProof.fileUrl}</div>
+                  )}
+                  <div>
+                    Base64:{" "}
+                    {paymentProof.base64 ? "Available" : "Not available"}
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -408,7 +478,12 @@ const Payment = () => {
               <li>Upload proof of payment after transferring</li>
               <li>Seats will be reserved after payment confirmation</li>
               <li>You will receive e-ticket after payment verification</li>
-              <li>Save Your e-ticket and Reedem it on the day of show</li>
+              <li>
+                <strong>
+                  Booking reference and verification code will be available on
+                  your ticket page
+                </strong>
+              </li>
             </ul>
           </div>
         </div>

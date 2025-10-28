@@ -861,6 +861,84 @@
   font-weight: 600;
 }
 
+/* Di MyTickets.css */
+.verification-code-row {
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+}
+
+.verification-code {
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  color: #e83e8c;
+  background: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #e83e8c;
+}
+
+.verification-instruction {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 10px;
+}
+
+.status.pending_verification {
+  color: #e67e22;
+  font-weight: bold;
+}
+
+.status.confirmed {
+  color: #27ae60;
+  font-weight: bold;
+}
+
+.status.pending {
+  color: #7f8c8d;
+  font-weight: bold;
+}
+
+/* Tambahkan di MyTickets.css */
+.verification-code-row {
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+  margin: 5px 0;
+}
+
+.verification-code {
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  color: #e83e8c;
+  background: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #e83e8c;
+  font-size: 14px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-row .label {
+  font-weight: 600;
+  color: #555;
+}
+
+.detail-row .value {
+  color: #333;
+}
+
 /* QR Section */
 .qr-section {
   text-align: center;
