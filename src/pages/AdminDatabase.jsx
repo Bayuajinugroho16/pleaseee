@@ -9,20 +9,18 @@ const AdminDatabase = () => {
   const [bundleOrders, setBundleOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedBooking, setSelectedBooking] = useState(null);
-  const [paymentImage, setPaymentImage] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [imageLoading, setImageLoading] = useState(false);
 
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  // ✅ Redirect if not admin
+  // Redirect if not admin
   useEffect(() => {
     if (!isAdmin && !loading) navigate("/home");
   }, [isAdmin, loading, navigate]);
 
-  // ✅ Fetch bookings
+  // Fetch bookings and bundles
   useEffect(() => {
     if (isAdmin) fetchAllData();
   }, [isAdmin]);
@@ -38,7 +36,7 @@ const AdminDatabase = () => {
         fetch("https://beckendflyio.vercel.app/api/admin/all-bookings", {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("https://beckendflyio.vercel.app/api/bookings/bundle-orders", {
+        fetch("https://beckendflyio.vercel.app/api/admin/bundle-orders", {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -59,36 +57,52 @@ const AdminDatabase = () => {
     }
   };
 
-  // ✅ View payment proof
-  const viewPaymentProof = async (booking) => {
-    setSelectedBooking(booking);
-    setShowPaymentModal(true);
-    setPaymentImage(null);
-    setImageLoading(true);
+  const getAllOrders = () => {
+    const regular = bookings.map((b) => ({
+      ...b,
+      order_type: "regular",
+      display_customer: b.customer_name,
+      display_movie: b.movie_title,
+      display_amount: b.total_amount,
+      display_status: b.status,
+      reference: b.booking_reference,
+      has_payment_image: !!b.payment_proof,
+      display_date: b.booking_date,
+    }));
 
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(
-        `https://beckendflyio.vercel.app/api/admin/payment-proof/${booking.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const result = await res.json();
-      if (result.success) setPaymentImage(result.data.image_url);
-      else setPaymentImage("not_found");
-    } catch (err) {
-      console.error(err);
-      setPaymentImage("error");
-    } finally {
-      setImageLoading(false);
-    }
+    const bundle = bundleOrders.map((b) => ({
+      ...b,
+      order_type: "bundle",
+      display_customer: b.customer_name,
+      display_movie: b.movie_title || b.bundle_name,
+      display_amount: b.total_amount || b.total_price,
+      display_status: b.status,
+      reference: b.order_reference,
+      has_payment_image: !!b.payment_proof,
+      display_date: b.booking_date || b.order_date,
+    }));
+
+    return [...regular, ...bundle].sort(
+      (a, b) => new Date(b.display_date) - new Date(a.display_date)
+    );
   };
 
-  // ✅ Update booking status
-  const updateBookingStatus = async (bookingReference, newStatus) => {
+  const allOrders = getAllOrders();
+
+  const viewPaymentProof = (order) => {
+    if (!order.has_payment_image) {
+      alert("❌ No payment proof available");
+      return;
+    }
+    setSelectedOrder(order);
+    setShowPaymentModal(true);
+  };
+
+  const updateOrderStatus = async (reference, newStatus) => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `https://beckendflyio.vercel.app/api/admin/bookings/${bookingReference}/status`,
+        `https://beckendflyio.vercel.app/api/admin/orders/${reference}/status`,
         {
           method: "PUT",
           headers: {
@@ -107,35 +121,16 @@ const AdminDatabase = () => {
     }
   };
 
-  const getAllOrders = () => {
-    const regular = bookings.map((b) => ({
-      ...b,
-      order_type: "regular",
-      display_customer: b.customer_name,
-      display_movie: b.movie_title,
-      display_amount: b.total_amount,
-      display_status: b.status,
-      has_payment_image: b.has_payment_image || b.payment_base64,
-      display_date: b.booking_date,
-    }));
-
-    const bundle = bundleOrders.map((b) => ({
-      ...b,
-      order_type: "bundle",
-      display_customer: b.customer_name,
-      display_movie: b.movie_title || b.bundle_name,
-      display_amount: b.total_amount || b.total_price,
-      display_status: b.status,
-      has_payment_image: b.has_payment_image,
-      display_date: b.booking_date || b.order_date,
-    }));
-
-    return [...regular, ...bundle].sort(
-      (a, b) => new Date(b.display_date) - new Date(a.display_date)
+  const handleConfirmReject = async (newStatus) => {
+    if (!selectedOrder) return;
+    const confirmed = window.confirm(
+      `Set status "${newStatus}" for ${selectedOrder.display_customer}?`
     );
-  };
+    if (!confirmed) return;
 
-  const allOrders = getAllOrders();
+    await updateOrderStatus(selectedOrder.reference, newStatus);
+    setShowPaymentModal(false);
+  };
 
   if (loading) return <div className="admin-container">Loading...</div>;
 
@@ -181,7 +176,7 @@ const AdminDatabase = () => {
                 <select
                   value={o.display_status}
                   onChange={(e) =>
-                    updateBookingStatus(o.booking_reference, e.target.value)
+                    updateOrderStatus(o.reference, e.target.value)
                   }
                 >
                   <option value="pending">Pending</option>
@@ -196,16 +191,15 @@ const AdminDatabase = () => {
       </table>
 
       {/* Payment Modal */}
-      {showPaymentModal && (
-        <div className="payment-modal">
-          <div className="modal-content">
-            <h3>Payment Proof - {selectedBooking.display_customer}</h3>
-            {imageLoading && <p>Loading image...</p>}
-            {!imageLoading && paymentImage === "not_found" && <p>❌ No payment proof found</p>}
-            {!imageLoading && paymentImage === "error" && <p>❌ Error loading image</p>}
-            {!imageLoading && paymentImage && paymentImage !== "not_found" && paymentImage !== "error" && (
-              <img src={paymentImage} alt="Payment Proof" className="payment-img" />
-            )}
+      {showPaymentModal && selectedOrder && (
+        <div className="modal-overlay" onClick={() => setShowPaymentModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Bukti Pembayaran - {selectedOrder.display_customer}</h3>
+            <img
+              src={selectedOrder.payment_proof}
+              alt="Payment Proof"
+              style={{ maxWidth: "100%", height: "auto" }}
+            />
             <div className="modal-actions">
               <button onClick={() => handleConfirmReject("confirmed")}>✅ Confirm</button>
               <button onClick={() => handleConfirmReject("rejected")}>❌ Reject</button>

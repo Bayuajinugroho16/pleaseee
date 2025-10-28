@@ -186,29 +186,25 @@ const BundleCheckout = () => {
   };
 
   const uploadPaymentProof = async (file, orderReference) => {
-    try {
-      console.log("📤 Uploading payment proof to Supabase Storage...");
+  try {
+    const ext = file.name.split(".").pop();
+    const filePath = `bundle-payments/${orderReference}.${ext}`;
 
-      const ext = file.name.split(".").pop();
-      const filePath = `bundle-payments/${orderReference}.${ext}`;
+    const { data, error } = await supabase.storage
+      .from("payment_proofs")
+      .upload(filePath, file, { upsert: true });
 
-      const { data, error } = await supabase.storage
-        .from("payment_proofs")
-        .upload(filePath, file, { upsert: true });
+    if (error) throw error;
 
-      if (error) throw error;
+    const { data: publicUrlData } = supabase.storage
+      .from("payment_proofs")
+      .getPublicUrl(filePath);
 
-      const { data: publicUrlData } = supabase.storage
-        .from("payment_proofs")
-        .getPublicUrl(filePath);
-
-      console.log("✅ File uploaded:", publicUrlData.publicUrl);
-      return { success: true, url: publicUrlData.publicUrl, filePath };
-    } catch (error) {
-      console.error("❌ Upload failed:", error);
-      return { success: false, message: error.message };
-    }
-  };
+    return { success: true, url: publicUrlData.publicUrl, filePath };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+};
 
   const handleUploadPaymentProof = async () => {
     if (!paymentProof) {
@@ -246,60 +242,87 @@ const BundleCheckout = () => {
     }
   };
 
-  const handleConfirmPayment = async () => {
-    if (!paymentProof) {
-      alert("Silakan upload bukti pembayaran terlebih dahulu.");
-      return;
-    }
+ const handleConfirmPayment = async () => {
+  if (!paymentProof) {
+    alert("Silakan upload bukti pembayaran terlebih dahulu.");
+    return;
+  }
 
-    setIsProcessing(true);
+  if (!customerData.phone) {
+    alert("Nomor handphone wajib diisi.");
+    return;
+  }
 
-    try {
-      // 1️⃣ Buat order reference
-      const orderReference = generateBundleReference();
+  setIsProcessing(true);
 
-      // 2️⃣ Simpan ke database Supabase (status awal: waiting_verification)
-      const orderData = {
-        order_reference: orderReference,
-        bundleId: bundle.id,
-        bundleName: bundle.name,
-        bundleDescription: bundle.description || "",
-        bundlePrice: bundle.bundlePrice,
-        originalPrice: bundle.originalPrice,
-        savings: bundle.savings,
-        quantity: customerData.quantity,
-        totalPrice: totalPrice,
-        customerName: customerData.name,
-        customerPhone: customerData.phone,
-        customerEmail: customerData.email,
-      };
+  try {
+    // 1️⃣ Buat order reference
+    const orderReference = generateBundleReference();
 
-      const saveResult = await saveBundleOrderToDatabase(orderData);
-      if (!saveResult.success) throw new Error(saveResult.message);
+    // 2️⃣ Simpan ke database Supabase
+    const orderPayload = {
+      order_reference: orderReference,
+      bundle_id: bundle.id,
+      bundle_name: bundle.name,
+      bundle_description: bundle.description || "",
+      bundle_price: bundle.bundlePrice,
+      original_price: bundle.originalPrice,
+      savings: bundle.savings,
+      quantity: customerData.quantity,
+      total_price: totalPrice,
+      customer_name: customerData.name,
+      customer_phone: customerData.phone,
+      customer_email: customerData.email,
+      user_id: user?.id || user?._id || "unknown",
+      status: "pending",
+      created_at: new Date().toISOString(),
+    };
 
-      // 3️⃣ Upload bukti pembayaran
-      const uploadResult = await uploadPaymentProof(
-        paymentProof.file,
-        orderReference
-      );
-      if (!uploadResult.success) throw new Error(uploadResult.message);
+    const { data: savedOrder, error: saveError } = await supabase
+      .from("bundle_orders")
+      .insert([orderPayload])
+      .select("*")
+      .single();
 
-      // 4️⃣ Update order status di frontend
-      setOrderData(saveResult.data);
-      setOrderStatus("waiting_verification");
+    if (saveError) throw saveError;
 
-      alert(
-        "✅ Bukti pembayaran berhasil diunggah. Silakan hubungi admin untuk verifikasi dalam 10 menit."
-      );
-    } catch (error) {
-      console.error("❌ Error saat konfirmasi pembayaran:", error);
-      alert("Gagal mengirim data pembayaran: " + error.message);
-      setOrderStatus("failed");
-    } finally {
-      setIsProcessing(false);
-      setShowConfirmation(false);
-    }
-  };
+    setOrderData(savedOrder);
+
+    // 3️⃣ Upload bukti pembayaran ke Supabase Storage
+    const ext = paymentProof.name.split(".").pop();
+    const filePath = `bundle-payments/${orderReference}.${ext}`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("payment_proofs")
+      .upload(filePath, paymentProof.file, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    // 4️⃣ Ambil public URL
+    const { data: publicUrlData } = supabase.storage
+      .from("payment_proofs")
+      .getPublicUrl(filePath);
+
+    // 5️⃣ Update order dengan URL bukti pembayaran
+    await supabase
+      .from("bundle_orders")
+      .update({ payment_proof: publicUrlData.publicUrl })
+      .eq("id", savedOrder.id);
+
+    setOrderStatus("waiting_verification");
+
+    alert(
+      "✅ Bukti pembayaran berhasil diunggah. Silakan hubungi admin untuk verifikasi."
+    );
+  } catch (error) {
+    console.error("❌ Error saat konfirmasi pembayaran:", error);
+    alert("Gagal mengirim data pembayaran: " + error.message);
+    setOrderStatus("failed");
+  } finally {
+    setIsProcessing(false);
+    setShowConfirmation(false);
+  }
+};
 
   const handleCancelConfirmation = () => {
     setShowConfirmation(false);

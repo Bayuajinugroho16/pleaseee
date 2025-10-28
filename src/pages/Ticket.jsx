@@ -1,13 +1,45 @@
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Navigation from "../components/Navigation";
 import "./Ticket.css";
 
 const Ticket = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { bookingData: initialBookingData } = location.state || {};
+  const [bookingData, setBookingData] = useState(initialBookingData);
+  const prevStatus = useRef(initialBookingData?.status || "");
 
-  const { bookingData } = location.state || {};
+  // Polling setiap 5 detik
+  useEffect(() => {
+    if (!bookingData?.booking_reference) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await axios.get(`/api/bookings/${bookingData.booking_reference}`);
+        if (res.data.valid) {
+          setBookingData(res.data.booking);
+
+          // ✅ Toast ketika status berubah dari pending_verification ke confirmed
+          if (
+            prevStatus.current === "pending_verification" &&
+            res.data.booking.status === "confirmed"
+          ) {
+            toast.success("🎉 Pembayaran berhasil dikonfirmasi! Tiket Anda sudah valid.");
+          }
+
+          prevStatus.current = res.data.booking.status;
+        }
+      } catch (err) {
+        console.error("Error fetching booking:", err);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [bookingData?.booking_reference]);
 
   if (!bookingData) {
     return (
@@ -70,7 +102,7 @@ const Ticket = () => {
           <div className="rejected-ticket-section">
             <div className="rejected-icon">❌</div>
             <h2>Pembayaran Ditolak</h2>
-            <p>Silakan periksa bukti pembayaran atau hubungi admin</p>
+            <p>Silakan periksa bukti pembayaran atau hubungi admin Tiar 087811359255</p>
             <button onClick={() => navigate("/payment")} className="retry-btn">
               Upload Ulang Bukti Pembayaran
             </button>
@@ -95,6 +127,7 @@ const Ticket = () => {
         <h1>📋 Informasi Tiket</h1>
         {renderTicketContent()}
       </div>
+      <ToastContainer position="top-right" autoClose={5000} />
     </div>
   );
 };
