@@ -59,6 +59,7 @@ const AdminDatabase = () => {
     }
   };
 
+  // ✅ View payment proof
   const viewPaymentProof = async (booking) => {
     setSelectedBooking(booking);
     setShowPaymentModal(true);
@@ -82,6 +83,7 @@ const AdminDatabase = () => {
     }
   };
 
+  // ✅ Update booking status
   const updateBookingStatus = async (bookingReference, newStatus) => {
     try {
       const token = localStorage.getItem("token");
@@ -103,17 +105,6 @@ const AdminDatabase = () => {
       console.error(err);
       alert("❌ Error updating status");
     }
-  };
-
-  const handleConfirmReject = async (newStatus) => {
-    if (!selectedBooking) return;
-    const confirmed = window.confirm(
-      `Set status "${newStatus}" for ${selectedBooking.customer_name}?`
-    );
-    if (!confirmed) return;
-
-    await updateBookingStatus(selectedBooking.booking_reference, newStatus);
-    setShowPaymentModal(false);
   };
 
   const getAllOrders = () => {
@@ -203,6 +194,26 @@ const AdminDatabase = () => {
           ))}
         </tbody>
       </table>
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <div className="payment-modal">
+          <div className="modal-content">
+            <h3>Payment Proof - {selectedBooking.display_customer}</h3>
+            {imageLoading && <p>Loading image...</p>}
+            {!imageLoading && paymentImage === "not_found" && <p>❌ No payment proof found</p>}
+            {!imageLoading && paymentImage === "error" && <p>❌ Error loading image</p>}
+            {!imageLoading && paymentImage && paymentImage !== "not_found" && paymentImage !== "error" && (
+              <img src={paymentImage} alt="Payment Proof" className="payment-img" />
+            )}
+            <div className="modal-actions">
+              <button onClick={() => handleConfirmReject("confirmed")}>✅ Confirm</button>
+              <button onClick={() => handleConfirmReject("rejected")}>❌ Reject</button>
+              <button onClick={() => setShowPaymentModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
