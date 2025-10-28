@@ -23,6 +23,7 @@ const BundleCheckout = () => {
   const [qrImageError, setQrImageError] = useState(false);
   const [orderStatus, setOrderStatus] = useState(null);
   const [orderData, setOrderData] = useState(null);
+
   const totalPrice = bundle?.bundlePrice * customerData.quantity;
 
   useEffect(() => {
@@ -74,11 +75,7 @@ const BundleCheckout = () => {
     }
   };
 
-  const generateBundleReference = () => {
-    const timestamp = new Date().getTime();
-    const random = Math.floor(Math.random() * 1000);
-    return `BUNDLE-${timestamp}-${random}`;
-  };
+  const generateBundleReference = () => `BUNDLE-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -94,32 +91,18 @@ const BundleCheckout = () => {
       return;
     }
 
-    setUploading(true);
-    setPaymentProof({
-      file,
-      name: file.name,
-      type: file.type,
-      size: file.size,
-    });
-    setUploading(false);
+    setPaymentProof(file); // simpan File asli
   };
 
   const handleConfirmPayment = async () => {
-    if (!paymentProof) {
-      alert("Silakan upload bukti pembayaran terlebih dahulu.");
-      return;
-    }
-    if (!customerData.phone) {
-      alert("Nomor handphone wajib diisi.");
-      return;
-    }
+    if (!paymentProof) return alert("Upload bukti pembayaran terlebih dahulu");
+    if (!customerData.phone) return alert("Nomor HP wajib diisi");
 
     setIsProcessing(true);
+    const orderReference = generateBundleReference();
 
     try {
-      const orderReference = generateBundleReference();
-
-      // 1️⃣ Buat order di MySQL via backend
+      // 1️⃣ CREATE ORDER DI MYSQL
       const resOrder = await fetch(`${import.meta.env.VITE_API_URL}/api/bundle/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -138,41 +121,39 @@ const BundleCheckout = () => {
       const orderResult = await resOrder.json();
       if (!orderResult.success) throw new Error(orderResult.message);
 
-      setOrderData(orderResult.data);
-
-      // 2️⃣ Upload bukti pembayaran ke Supabase Storage
+      // 2️⃣ UPLOAD FILE KE SUPABASE
+      setUploading(true);
       const ext = paymentProof.name.split(".").pop();
       const filePath = `bundle-payments/${orderReference}.${ext}`;
-
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("payment_proofs")
-        .upload(filePath, paymentProof.file, { upsert: true });
+        .upload(filePath, paymentProof, { upsert: true });
       if (uploadError) throw uploadError;
 
       const { data: publicUrlData } = supabase.storage
         .from("payment_proofs")
         .getPublicUrl(filePath);
+      const publicUrl = publicUrlData.publicUrl;
 
-      // 3️⃣ Update order di MySQL dengan URL bukti pembayaran
+      // 3️⃣ UPDATE MYSQL DENGAN URL FILE
       const resUpdate = await fetch(`${import.meta.env.VITE_API_URL}/api/bundle/update-payment-proof`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_reference: orderReference,
-          payment_proof_url: publicUrlData.publicUrl,
-        }),
+        body: JSON.stringify({ order_reference: orderReference, payment_proof_url: publicUrl }),
       });
       const updateResult = await resUpdate.json();
       if (!updateResult.success) throw new Error(updateResult.message);
 
+      setOrderData({ ...orderResult.data, payment_proof_url: publicUrl });
       setOrderStatus("waiting_verification");
       alert("✅ Bukti pembayaran berhasil diunggah. Tunggu verifikasi admin.");
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error("❌ Error saat konfirmasi pembayaran:", err);
       setOrderStatus("failed");
-      alert("Gagal konfirmasi pembayaran: " + error.message);
+      alert("Gagal konfirmasi pembayaran: " + err.message);
     } finally {
       setIsProcessing(false);
+      setUploading(false);
     }
   };
 
