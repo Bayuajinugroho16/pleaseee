@@ -397,323 +397,341 @@ const AdminVerify = () => {
     console.log("📢 Broadcast ticket validation:", result);
   };
 
- const verifyTicket = async () => {
-  try {
-    if (!manualInput.booking_reference || !manualInput.verification_code) {
-      alert('Harap masukkan Booking Reference dan Verification Code');
-      return;
-    }
-
-    console.log("🔍 Memulai verifikasi tiket:", manualInput);
-    setLoading(true);
-    setScanResult(null);
-
-    const normalizedInput = {
-      booking_reference: manualInput.booking_reference.trim().toUpperCase(),
-      verification_code: manualInput.verification_code.trim()
-    };
-
-    let realBookingData = null;
-    let verificationResult = null;
-
+  const verifyTicket = async () => {
     try {
-      // ✅ METHOD 1: CARI DI SEMUA DATA BOOKINGS
-      console.log("🔄 Method 1: Mencari di semua data bookings...");
-      
+      if (!manualInput.booking_reference || !manualInput.verification_code) {
+        alert("Harap masukkan Booking Reference dan Verification Code");
+        return;
+      }
+
+      console.log("🔍 Memulai verifikasi tiket:", manualInput);
+      setLoading(true);
+      setScanResult(null);
+
+      const normalizedInput = {
+        booking_reference: manualInput.booking_reference.trim().toUpperCase(),
+        verification_code: manualInput.verification_code.trim(),
+      };
+
+      let realBookingData = null;
+      let verificationResult = null;
+
       try {
-        const response = await fetch('https://beckendflyio.vercel.app/api/bookings');
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log("📊 Semua data bookings:", result);
+        // ✅ METHOD 1: CARI DI SEMUA DATA BOOKINGS
+        console.log("🔄 Method 1: Mencari di semua data bookings...");
 
-          if (result.success && result.data) {
-            // ✅ FILTER MANUAL DI CLIENT SIDE - LEBIH AKURAT
-            const foundBooking = result.data.find(booking => {
-              const isMatch = booking.booking_reference === normalizedInput.booking_reference;
-              
-              if (isMatch) {
-                console.log("✅✅✅ BOOKING DITEMUKAN:", booking);
-              }
-              
-              return isMatch;
-            });
+        try {
+          const response = await fetch(
+            "https://beckendflyio.vercel.app/api/bookings"
+          );
 
-            if (foundBooking) {
-              realBookingData = foundBooking;
-              console.log("✅ Data booking ditemukan:", realBookingData);
-            } else {
-              console.log("❌ Booking tidak ditemukan. Available references:", 
-                result.data.slice(0, 10).map(b => b.booking_reference)
-              );
-            }
-          }
-        }
-      } catch (error) {
-        console.log("❌ Fetch all bookings failed:", error.message);
-      }
+          if (response.ok) {
+            const result = await response.json();
+            console.log("📊 Semua data bookings:", result);
 
-      // ✅ METHOD 2: JIKA TIDAK DITEMUKAN, COBA ENDPOINT LAIN
-      if (!realBookingData) {
-        console.log("🔄 Method 2: Mencoba endpoint spesifik...");
-        
-        const endpoints = [
-          `https://beckendflyio.vercel.app/api/bookings?reference=${normalizedInput.booking_reference}`,
-          `https://beckendflyio.vercel.app/api/bookings?search=${normalizedInput.booking_reference}`,
-          `https://beckendflyio.vercel.app/api/bookings/${normalizedInput.booking_reference}`
-        ];
+            if (result.success && result.data) {
+              // ✅ FILTER MANUAL DI CLIENT SIDE - LEBIH AKURAT
+              const foundBooking = result.data.find((booking) => {
+                const isMatch =
+                  booking.booking_reference ===
+                  normalizedInput.booking_reference;
 
-        for (let endpoint of endpoints) {
-          try {
-            console.log(`🔄 Mencoba endpoint: ${endpoint}`);
-            const response = await fetch(endpoint);
-
-            if (response.ok) {
-              const result = await response.json();
-              console.log(`📊 Response dari ${endpoint}:`, result);
-
-              if (result.success) {
-                // Handle berbagai format response
-                let bookings = [];
-                if (Array.isArray(result.data)) {
-                  bookings = result.data;
-                } else if (result.data && typeof result.data === 'object') {
-                  bookings = [result.data];
-                } else if (Array.isArray(result.bookings)) {
-                  bookings = result.bookings;
+                if (isMatch) {
+                  console.log("✅✅✅ BOOKING DITEMUKAN:", booking);
                 }
 
-                const foundBooking = bookings.find(booking => 
-                  booking.booking_reference === normalizedInput.booking_reference
+                return isMatch;
+              });
+
+              if (foundBooking) {
+                realBookingData = foundBooking;
+                console.log("✅ Data booking ditemukan:", realBookingData);
+              } else {
+                console.log(
+                  "❌ Booking tidak ditemukan. Available references:",
+                  result.data.slice(0, 10).map((b) => b.booking_reference)
                 );
-
-                if (foundBooking) {
-                  realBookingData = foundBooking;
-                  console.log("✅ Data booking ditemukan via endpoint:", realBookingData);
-                  break;
-                }
               }
-            } else {
-              console.log(`❌ Endpoint ${endpoint} gagal: ${response.status}`);
             }
-          } catch (error) {
-            console.log(`❌ Endpoint ${endpoint} error:`, error.message);
+          }
+        } catch (error) {
+          console.log("❌ Fetch all bookings failed:", error.message);
+        }
+
+        // ✅ METHOD 2: JIKA TIDAK DITEMUKAN, COBA ENDPOINT LAIN
+        if (!realBookingData) {
+          console.log("🔄 Method 2: Mencoba endpoint spesifik...");
+
+          const endpoints = [
+            `https://beckendflyio.vercel.app/api/bookings?reference=${normalizedInput.booking_reference}`,
+            `https://beckendflyio.vercel.app/api/bookings?search=${normalizedInput.booking_reference}`,
+            `https://beckendflyio.vercel.app/api/bookings/${normalizedInput.booking_reference}`,
+          ];
+
+          for (let endpoint of endpoints) {
+            try {
+              console.log(`🔄 Mencoba endpoint: ${endpoint}`);
+              const response = await fetch(endpoint);
+
+              if (response.ok) {
+                const result = await response.json();
+                console.log(`📊 Response dari ${endpoint}:`, result);
+
+                if (result.success) {
+                  // Handle berbagai format response
+                  let bookings = [];
+                  if (Array.isArray(result.data)) {
+                    bookings = result.data;
+                  } else if (result.data && typeof result.data === "object") {
+                    bookings = [result.data];
+                  } else if (Array.isArray(result.bookings)) {
+                    bookings = result.bookings;
+                  }
+
+                  const foundBooking = bookings.find(
+                    (booking) =>
+                      booking.booking_reference ===
+                      normalizedInput.booking_reference
+                  );
+
+                  if (foundBooking) {
+                    realBookingData = foundBooking;
+                    console.log(
+                      "✅ Data booking ditemukan via endpoint:",
+                      realBookingData
+                    );
+                    break;
+                  }
+                }
+              } else {
+                console.log(
+                  `❌ Endpoint ${endpoint} gagal: ${response.status}`
+                );
+              }
+            } catch (error) {
+              console.log(`❌ Endpoint ${endpoint} error:`, error.message);
+            }
           }
         }
-      }
 
-      // ✅ VERIFIKASI DENGAN DATA YANG DITEMUKAN
-      if (realBookingData) {
-        console.log("🔄 Melakukan verifikasi...");
-        
-        const dbVerificationCode = realBookingData.verification_code ? 
-          realBookingData.verification_code.toString().trim() : '';
-        
-        console.log("🔍 Perbandingan kode verifikasi:");
-        console.log("Input Reference:", normalizedInput.booking_reference);
-        console.log("DB Reference:", realBookingData.booking_reference);
-        console.log("Input Code:", normalizedInput.verification_code);
-        console.log("DB Code:", dbVerificationCode);
-        console.log("Status:", realBookingData.status);
-        console.log("Payment Proof:", realBookingData.payment_proof);
+        // ✅ VERIFIKASI DENGAN DATA YANG DITEMUKAN
+        if (realBookingData) {
+          console.log("🔄 Melakukan verifikasi...");
 
-        // ✅ LOGIC VERIFIKASI YANG BENAR
-        const isReferenceValid = normalizedInput.booking_reference === realBookingData.booking_reference;
-        const isCodeValid = normalizedInput.verification_code === dbVerificationCode;
-        const hasPayment = realBookingData.payment_proof || realBookingData.has_payment_image;
-        const isPending = realBookingData.status === 'pending';
-        const isPendingVerification = realBookingData.status === 'pending_verification';
-        const isConfirmed = realBookingData.status === 'confirmed';
+          const dbVerificationCode = realBookingData.verification_code
+            ? realBookingData.verification_code.toString().trim()
+            : "";
 
-        let message = '';
-        let shouldShowConfirmButton = false;
-        let isValid = false;
+          console.log("🔍 Perbandingan kode verifikasi:");
+          console.log("Input Reference:", normalizedInput.booking_reference);
+          console.log("DB Reference:", realBookingData.booking_reference);
+          console.log("Input Code:", normalizedInput.verification_code);
+          console.log("DB Code:", dbVerificationCode);
+          console.log("Status:", realBookingData.status);
+          console.log("Payment Proof:", realBookingData.payment_proof);
 
-        // CASE 1: BELUM BAYAR
-        if (isPending && !hasPayment) {
-          message = '❌ Tiket belum dibayar - Customer perlu upload bukti bayar dulu';
-        }
-        // CASE 2: SUDAH BAYAR TAPI BELUM ADA VERIFICATION CODE
-        else if (isPendingVerification && !dbVerificationCode) {
-          message = '✅ Sudah bayar! Admin bisa generate verification code';
-          shouldShowConfirmButton = true;
-        }
-        // CASE 3: SUDAH BAYAR & ADA VERIFICATION CODE - TUNGGU KONFIRMASI
-        else if (isPendingVerification && dbVerificationCode) {
-          if (isCodeValid) {
-            message = '✅ Kode benar! Tiket menunggu konfirmasi admin';
+          // ✅ LOGIC VERIFIKASI YANG BENAR
+          const isReferenceValid =
+            normalizedInput.booking_reference ===
+            realBookingData.booking_reference;
+          const isCodeValid =
+            normalizedInput.verification_code === dbVerificationCode;
+          const hasPayment =
+            realBookingData.payment_proof || realBookingData.has_payment_image;
+          const isPending = realBookingData.status === "pending";
+          const isPendingVerification =
+            realBookingData.status === "pending_verification";
+          const isConfirmed = realBookingData.status === "confirmed";
+
+          let message = "";
+          let shouldShowConfirmButton = false;
+          let isValid = false;
+
+          // CASE 1: BELUM BAYAR
+          if (isPending && !hasPayment) {
+            message =
+              "❌ Tiket belum dibayar - Customer perlu upload bukti bayar dulu";
+          }
+          // CASE 2: SUDAH BAYAR TAPI BELUM ADA VERIFICATION CODE
+          else if (isPendingVerification && !dbVerificationCode) {
+            message = "✅ Sudah bayar! Admin bisa generate verification code";
             shouldShowConfirmButton = true;
-          } else {
-            message = `❌ Kode verifikasi tidak sesuai (Database: ${dbVerificationCode})`;
           }
-        }
-        // CASE 4: SUDAH CONFIRMED
-        else if (isConfirmed) {
-          if (isCodeValid) {
-            message = '🎉 Tiket VALID - Silakan masuk!';
-            isValid = true;
-          } else {
-            message = `❌ Kode verifikasi tidak sesuai (Database: ${dbVerificationCode})`;
-          }
-        }
-        // CASE 5: STATUS LAIN
-        else {
-          message = `❌ Status tiket tidak valid untuk verifikasi: ${realBookingData.status}`;
-        }
-
-        verificationResult = {
-          valid: isValid,
-          message: message,
-          shouldShowConfirmButton: shouldShowConfirmButton,
-          ticket_info: {
-            movie: realBookingData.movie_title,
-            booking_reference: realBookingData.booking_reference,
-            verification_code: dbVerificationCode,
-            seats: parseSeatNumbers(realBookingData.seat_numbers),
-            customer: realBookingData.customer_name,
-            customer_email: realBookingData.customer_email,
-            total_paid: realBookingData.total_amount,
-            status: realBookingData.status,
-            showtime: realBookingData.showtime,
-            payment_proof: realBookingData.payment_proof,
-            has_payment_image: realBookingData.has_payment_image,
-            verified_at: new Date().toISOString(),
-            debug_info: {
-              has_verification_code: !!dbVerificationCode,
-              has_payment_proof: !!realBookingData.payment_proof,
-              status: realBookingData.status
+          // CASE 3: SUDAH BAYAR & ADA VERIFICATION CODE - TUNGGU KONFIRMASI
+          else if (isPendingVerification && dbVerificationCode) {
+            if (isCodeValid) {
+              message = "✅ Kode benar! Tiket menunggu konfirmasi admin";
+              shouldShowConfirmButton = true;
+            } else {
+              message = `❌ Kode verifikasi tidak sesuai (Database: ${dbVerificationCode})`;
             }
           }
-        };
+          // CASE 4: SUDAH CONFIRMED
+          else if (isConfirmed) {
+            if (isCodeValid) {
+              message = "🎉 Tiket VALID - Silakan masuk!";
+              isValid = true;
+            } else {
+              message = `❌ Kode verifikasi tidak sesuai (Database: ${dbVerificationCode})`;
+            }
+          }
+          // CASE 5: STATUS LAIN
+          else {
+            message = `❌ Status tiket tidak valid untuk verifikasi: ${realBookingData.status}`;
+          }
 
-      } else {
-        // ❌ DATA TIDAK DITEMUKAN
-        console.log("🔄 Method 3: Data tidak ditemukan di database");
-        verificationResult = {
+          verificationResult = {
+            valid: isValid,
+            message: message,
+            shouldShowConfirmButton: shouldShowConfirmButton,
+            ticket_info: {
+              movie: realBookingData.movie_title,
+              booking_reference: realBookingData.booking_reference,
+              verification_code: dbVerificationCode,
+              seats: parseSeatNumbers(realBookingData.seat_numbers),
+              customer: realBookingData.customer_name,
+              customer_email: realBookingData.customer_email,
+              total_paid: realBookingData.total_amount,
+              status: realBookingData.status,
+              showtime: realBookingData.showtime,
+              payment_proof: realBookingData.payment_proof,
+              has_payment_image: realBookingData.has_payment_image,
+              verified_at: new Date().toISOString(),
+              debug_info: {
+                has_verification_code: !!dbVerificationCode,
+                has_payment_proof: !!realBookingData.payment_proof,
+                status: realBookingData.status,
+                workflow_step: getWorkflowStep(realBookingData.status),
+              },
+            },
+          };
+        } else {
+          // ❌ DATA TIDAK DITEMUKAN
+          console.log("🔄 Method 3: Data tidak ditemukan di database");
+          verificationResult = {
+            valid: false,
+            message: "❌ Data booking tidak ditemukan di database",
+            ticket_info: {
+              movie: "Unknown",
+              booking_reference: normalizedInput.booking_reference,
+              verification_code: normalizedInput.verification_code,
+              seats: ["Unknown"],
+              customer: "Unknown",
+              total_paid: 0,
+              status: "NOT_FOUND",
+            },
+          };
+        }
+
+        // ✅ PROSES HASIL VERIFIKASI
+        if (verificationResult) {
+          console.log("📊 Hasil verifikasi akhir:", verificationResult);
+
+          // Update state dengan hasil
+          setScanResult(verificationResult);
+
+          // Update history dan stats
+          const newScan = {
+            id: Date.now(),
+            booking_reference: normalizedInput.booking_reference,
+            timestamp: new Date().toISOString(),
+            valid: verificationResult.valid,
+            ticket_info: verificationResult.ticket_info,
+            method: "database",
+          };
+
+          setScanHistory((prev) => [newScan, ...prev.slice(0, 49)]);
+
+          // Update stats
+          setStats((prev) => ({
+            ...prev,
+            totalScanned: prev.totalScanned + 1,
+            validTickets:
+              prev.validTickets + (verificationResult.valid ? 1 : 0),
+            invalidTickets:
+              prev.invalidTickets + (verificationResult.valid ? 0 : 1),
+            todayScans: prev.todayScans + 1,
+            todayValid: prev.todayValid + (verificationResult.valid ? 1 : 0),
+          }));
+
+          // Broadcast ke client
+          broadcastTicketValidation(verificationResult);
+        } else {
+          throw new Error("Tidak ada hasil verifikasi yang dihasilkan");
+        }
+      } catch (innerError) {
+        console.error("❌ Error dalam proses verifikasi:", innerError);
+
+        // ✅ FALLBACK ERROR
+        const fallbackResult = {
           valid: false,
-          message: '❌ Data booking tidak ditemukan di database',
+          message: `❌ Error sistem: ${innerError.message}`,
           ticket_info: {
-            movie: 'Unknown',
+            movie: "Unknown",
             booking_reference: normalizedInput.booking_reference,
             verification_code: normalizedInput.verification_code,
-            seats: ['Unknown'],
-            customer: 'Unknown',
+            seats: ["Unknown"],
+            customer: "Unknown",
             total_paid: 0,
-            status: 'NOT_FOUND'
-          }
-        };
-      }
-
-      // ✅ PROSES HASIL VERIFIKASI
-      if (verificationResult) {
-        console.log("📊 Hasil verifikasi akhir:", verificationResult);
-        
-        // Update state dengan hasil
-        setScanResult(verificationResult);
-        
-        // Update history dan stats
-        const newScan = {
-          id: Date.now(),
-          booking_reference: normalizedInput.booking_reference,
-          timestamp: new Date().toISOString(),
-          valid: verificationResult.valid,
-          ticket_info: verificationResult.ticket_info,
-          method: 'database'
+            status: "ERROR",
+          },
         };
 
-        setScanHistory(prev => [newScan, ...prev.slice(0, 49)]);
-        
-        // Update stats
-        setStats(prev => ({
-          ...prev,
-          totalScanned: prev.totalScanned + 1,
-          validTickets: prev.validTickets + (verificationResult.valid ? 1 : 0),
-          invalidTickets: prev.invalidTickets + (verificationResult.valid ? 0 : 1),
-          todayScans: prev.todayScans + 1,
-          todayValid: prev.todayValid + (verificationResult.valid ? 1 : 0)
-        }));
-
-        // Broadcast ke client
-        broadcastTicketValidation(verificationResult);
-
-      } else {
-        throw new Error('Tidak ada hasil verifikasi yang dihasilkan');
+        setScanResult(fallbackResult);
       }
-
-    } catch (innerError) {
-      console.error("❌ Error dalam proses verifikasi:", innerError);
-      
-      // ✅ FALLBACK ERROR
-      const fallbackResult = {
-        valid: false,
-        message: `❌ Error sistem: ${innerError.message}`,
-        ticket_info: {
-          movie: 'Unknown',
-          booking_reference: normalizedInput.booking_reference,
-          verification_code: normalizedInput.verification_code,
-          seats: ['Unknown'],
-          customer: 'Unknown',
-          total_paid: 0,
-          status: 'ERROR'
-        }
-      };
-      
-      setScanResult(fallbackResult);
+    } catch (outerError) {
+      console.error("❌ Error utama verifikasi:", outerError);
+      alert(`Verifikasi gagal: ${outerError.message}`);
+    } finally {
+      setLoading(false);
     }
-
-  } catch (outerError) {
-    console.error("❌ Error utama verifikasi:", outerError);
-    alert(`Verifikasi gagal: ${outerError.message}`);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // ✅ FUNCTION KONFIRMASI TIKET
-const confirmTicketAndUpdateStatus = async (bookingReference) => {
-  try {
-    console.log("🔄 Mengkonfirmasi tiket...");
-    
-    const updateData = {
-      status: 'confirmed',
-      is_verified: 1,
-      verified_at: new Date().toISOString()
-    };
+  const confirmTicketAndUpdateStatus = async (bookingReference) => {
+    try {
+      console.log("🔄 Mengkonfirmasi tiket...");
 
-    const response = await fetch(
-      `https://beckendflyio.vercel.app/api/bookings/${bookingReference}/confirm`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updateData),
-      }
-    );
-
-    if (response.ok) {
-      const result = await response.json();
-      console.log("✅✅✅ TICKET CONFIRMED:", result);
-      
-      // ✅ KURSI OTOMATIS TERISI di sistem
-      // (Ini harus handle oleh backend)
-      
-      return {
-        success: true,
-        data: result.data,
-        message: 'Tiket berhasil dikonfirmasi! Kursi sekarang terisi.'
+      const updateData = {
+        status: "confirmed",
+        is_verified: 1,
+        verified_at: new Date().toISOString(),
       };
-    } else {
-      throw new Error(`HTTP ${response.status}`);
+
+      const response = await fetch(
+        `https://beckendflyio.vercel.app/api/bookings/${bookingReference}/confirm`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updateData),
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("✅✅✅ TICKET CONFIRMED:", result);
+
+        // ✅ KURSI OTOMATIS TERISI di sistem
+        // (Ini harus handle oleh backend)
+
+        return {
+          success: true,
+          data: result.data,
+          message: "Tiket berhasil dikonfirmasi! Kursi sekarang terisi.",
+        };
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (error) {
+      console.log("❌ Confirm ticket error:", error);
+      return {
+        success: false,
+        error: error.message,
+      };
     }
-  } catch (error) {
-    console.log("❌ Confirm ticket error:", error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-};
+  };
   const clearResult = () => {
     setScanResult(null);
   };
@@ -935,7 +953,7 @@ const confirmTicketAndUpdateStatus = async (bookingReference) => {
                     <div className="workflow-steps">
                       <div
                         className={`step ${
-                          scanResult.ticket_info.workflow_step.step >= 1
+                          scanResult.ticket_info?.workflow_step?.step >= 1
                             ? "completed"
                             : ""
                         }`}
@@ -943,16 +961,18 @@ const confirmTicketAndUpdateStatus = async (bookingReference) => {
                         <span className="step-number">1</span>
                         <span className="step-label">Booking</span>
                       </div>
+
                       <div
                         className={`connector ${
-                          scanResult.ticket_info.workflow_step.step >= 2
+                          scanResult.ticket_info?.workflow_step?.step >= 2
                             ? "completed"
                             : ""
                         }`}
                       ></div>
+
                       <div
                         className={`step ${
-                          scanResult.ticket_info.workflow_step.step >= 2
+                          scanResult.ticket_info?.workflow_step?.step >= 2
                             ? "completed"
                             : ""
                         }`}
@@ -960,16 +980,18 @@ const confirmTicketAndUpdateStatus = async (bookingReference) => {
                         <span className="step-number">2</span>
                         <span className="step-label">Bayar</span>
                       </div>
+
                       <div
                         className={`connector ${
-                          scanResult.ticket_info.workflow_step.step >= 3
+                          scanResult.ticket_info?.workflow_step?.step >= 3
                             ? "completed"
                             : ""
                         }`}
                       ></div>
+
                       <div
                         className={`step ${
-                          scanResult.ticket_info.workflow_step.step >= 3
+                          scanResult.ticket_info?.workflow_step?.step >= 3
                             ? "completed"
                             : ""
                         }`}
@@ -978,9 +1000,11 @@ const confirmTicketAndUpdateStatus = async (bookingReference) => {
                         <span className="step-label">Konfirmasi</span>
                       </div>
                     </div>
+
                     <div className="workflow-status">
-                      <strong>Status: </strong>
-                      {scanResult.ticket_info.workflow_step.description}
+                      <strong>Status:</strong>{" "}
+                      {scanResult.ticket_info?.workflow_step?.description ||
+                        "Status tidak diketahui"}
                     </div>
                   </div>
                 )}
