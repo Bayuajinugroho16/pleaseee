@@ -77,85 +77,85 @@ const BundleCheckout = () => {
 
   const generateBundleReference = () => `BUNDLE-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+const handleFileUpload = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const validTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
-    if (!validTypes.includes(file.type)) {
-      alert("Hanya file JPG, PNG, atau PDF yang diizinkan");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Ukuran file maksimal 5MB");
-      return;
-    }
+  const validTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
+  if (!validTypes.includes(file.type)) {
+    alert("Hanya file JPG, PNG, atau PDF yang diizinkan");
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    alert("Ukuran file maksimal 5MB");
+    return;
+  }
 
-    setPaymentProof(file); // simpan File asli
-  };
-
+  setPaymentProof(file);
+};
   const handleConfirmPayment = async () => {
-    if (!paymentProof) return alert("Upload bukti pembayaran terlebih dahulu");
-    if (!customerData.phone) return alert("Nomor HP wajib diisi");
+  if (!paymentProof) return alert("Upload bukti pembayaran terlebih dahulu");
+  if (!customerData.phone) return alert("Nomor HP wajib diisi");
 
-    setIsProcessing(true);
-    const orderReference = generateBundleReference();
+  setIsProcessing(true);
+  const orderReference = generateBundleReference();
 
-    try {
-      // 1️⃣ CREATE ORDER DI MYSQL
-      const resOrder = await fetch(`${import.meta.env.VITE_API_URL}/api/bundle/create-order`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_reference: orderReference,
-          bundle_id: bundle.id,
-          bundle_name: bundle.name,
-          customer_name: customerData.name,
-          customer_phone: customerData.phone,
-          customer_email: customerData.email,
-          quantity: customerData.quantity,
-          total_price: totalPrice,
-          status: "pending",
-        }),
-      });
-      const orderResult = await resOrder.json();
-      if (!orderResult.success) throw new Error(orderResult.message);
+  try {
+    // 1️⃣ CREATE ORDER DI MYSQL
+    const resOrder = await fetch(`${import.meta.env.VITE_API_URL}/api/bundle/create-order`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        order_reference: orderReference,
+        bundle_id: bundle.id,
+        bundle_name: bundle.name,
+        customer_name: customerData.name,
+        customer_phone: customerData.phone,
+        customer_email: customerData.email,
+        quantity: customerData.quantity,
+        total_price: totalPrice,
+        status: "pending",
+      }),
+    });
+    const orderResult = await resOrder.json();
+    if (!orderResult.success) throw new Error(orderResult.message);
 
-      // 2️⃣ UPLOAD FILE KE SUPABASE
-      setUploading(true);
-      const ext = paymentProof.name.split(".").pop();
-      const filePath = `bundle-payments/${orderReference}.${ext}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("payment_proofs")
-        .upload(filePath, paymentProof, { upsert: true });
-      if (uploadError) throw uploadError;
+    // 2️⃣ UPLOAD FILE KE SUPABASE (bucket bukti_pembayaran)
+    setUploading(true);
+    const ext = paymentProof.name.split(".").pop();
+    const filePath = `bundle-payments/${orderReference}.${ext}`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("bukti_pembayaran")
+      .upload(filePath, paymentProof, { upsert: true });
+    if (uploadError) throw uploadError;
 
-      const { data: publicUrlData } = supabase.storage
-        .from("payment_proofs")
-        .getPublicUrl(filePath);
-      const publicUrl = publicUrlData.publicUrl;
+    // 3️⃣ DAPATKAN PUBLIC URL
+    const { data: publicUrlData } = supabase.storage
+      .from("bukti_pembayaran")
+      .getPublicUrl(filePath);
+    const publicUrl = publicUrlData.publicUrl;
 
-      // 3️⃣ UPDATE MYSQL DENGAN URL FILE
-      const resUpdate = await fetch(`${import.meta.env.VITE_API_URL}/api/bundle/update-payment-proof`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_reference: orderReference, payment_proof_url: publicUrl }),
-      });
-      const updateResult = await resUpdate.json();
-      if (!updateResult.success) throw new Error(updateResult.message);
+    // 4️⃣ UPDATE ORDER DI MYSQL DENGAN URL FILE
+    const resUpdate = await fetch(`${import.meta.env.VITE_API_URL}/api/bundle/update-payment-proof`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order_reference: orderReference, payment_proof_url: publicUrl }),
+    });
+    const updateResult = await resUpdate.json();
+    if (!updateResult.success) throw new Error(updateResult.message);
 
-      setOrderData({ ...orderResult.data, payment_proof_url: publicUrl });
-      setOrderStatus("waiting_verification");
-      alert("✅ Bukti pembayaran berhasil diunggah. Tunggu verifikasi admin.");
-    } catch (err) {
-      console.error("❌ Error saat konfirmasi pembayaran:", err);
-      setOrderStatus("failed");
-      alert("Gagal konfirmasi pembayaran: " + err.message);
-    } finally {
-      setIsProcessing(false);
-      setUploading(false);
-    }
-  };
+    setOrderData({ ...orderResult.data, payment_proof_url: publicUrl });
+    setOrderStatus("waiting_verification");
+    alert("✅ Bukti pembayaran berhasil diunggah. Tunggu verifikasi admin.");
+  } catch (err) {
+    console.error("❌ Error saat konfirmasi pembayaran:", err);
+    setOrderStatus("failed");
+    alert("Gagal konfirmasi pembayaran: " + err.message);
+  } finally {
+    setIsProcessing(false);
+    setUploading(false);
+  }
+};
 
   const handleNewOrder = () => {
     setCustomerData((prev) => ({
