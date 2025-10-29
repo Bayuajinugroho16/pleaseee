@@ -25,6 +25,7 @@ const BundleCheckout = () => {
   const [orderStatus, setOrderStatus] = useState(null);
   const [orderData, setOrderData] = useState(null);
 
+
   const API_BASE_URL = (import.meta.env.VITE_API_URL || "https://beckendflyio.vercel.app/").replace(/\/+$/, "");
   const totalPrice = bundle?.bundlePrice * customerData.quantity;
 
@@ -43,6 +44,7 @@ const BundleCheckout = () => {
     }));
   }, [user, isAuthenticated, navigate]);
 
+
   if (!bundle) {
     return (
       <div className="bundle-checkout-container">
@@ -57,23 +59,6 @@ const BundleCheckout = () => {
       </div>
     );
   }
-
-  if (!user || !isAuthenticated) {
-    return (
-      <div className="bundle-checkout-container">
-        <Navigation />
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Memverifikasi authentication...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setCustomerData((prev) => ({ ...prev, [name]: value }));
-  };
 
   const generateBundleReference = () => `BUNDLE-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
@@ -97,28 +82,29 @@ const BundleCheckout = () => {
     if (!customerData.phone) return alert("Nomor HP wajib diisi");
 
     setIsProcessing(true);
-    const orderReference = generateBundleReference();
 
     try {
-      // 1️⃣ CREATE ORDER
+      // 1️⃣ CREATE ORDER (sesuai backend)
       const resOrder = await fetch(`${API_BASE_URL}/api/bundle/create-order`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        bundle_name: bundle.name,
-        quantity: customerData.quantity,
-        customer_name: customerData.name,
-      }),
-    });
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bundle_name: bundle.name,
+          quantity: customerData.quantity,
+          customer_name: customerData.name,
+        }),
+      });
 
       if (!resOrder.ok) throw new Error("Gagal membuat order");
       const orderResult = await resOrder.json();
       if (!orderResult.success) throw new Error(orderResult.message);
 
+      const createdOrder = orderResult.data; // backend mengembalikan order_reference
+
       // 2️⃣ UPLOAD FILE KE SUPABASE
       setUploading(true);
       const ext = paymentProof.name.split(".").pop();
-      const filePath = `bundle-payments/${orderReference}.${ext}`;
+      const filePath = `bundle-payments/${createdOrder.order_reference}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("bukti_pembayaran")
         .upload(filePath, paymentProof, { upsert: true });
@@ -130,17 +116,18 @@ const BundleCheckout = () => {
         .getPublicUrl(filePath);
       const publicUrl = publicUrlData.publicUrl;
 
-      // 4️⃣ UPDATE ORDER DI MYSQL
+      // 4️⃣ UPDATE ORDER PAYMENT PROOF
       const resUpdate = await fetch(`${API_BASE_URL}/api/bundle/update-payment-proof`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_reference: orderReference, payment_proof_url: publicUrl }),
+        body: JSON.stringify({ order_reference: createdOrder.order_reference, paymentProofUrl: publicUrl }),
       });
+
       if (!resUpdate.ok) throw new Error("Gagal update payment proof");
       const updateResult = await resUpdate.json();
       if (!updateResult.success) throw new Error(updateResult.message);
 
-      setOrderData({ ...orderResult.data, payment_proof_url: publicUrl });
+      setOrderData({ ...createdOrder, payment_proof_url: publicUrl });
       setOrderStatus("waiting_verification");
       alert("✅ Bukti pembayaran berhasil diunggah. Tunggu verifikasi admin.");
     } catch (err) {
@@ -164,7 +151,6 @@ const BundleCheckout = () => {
     setOrderStatus(null);
     setOrderData(null);
   };
-
   return (
     <div className="bundle-checkout-container">
       <Navigation />
