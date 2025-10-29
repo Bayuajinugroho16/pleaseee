@@ -25,7 +25,9 @@ const BundleCheckout = () => {
   const [orderStatus, setOrderStatus] = useState(null);
   const [orderData, setOrderData] = useState(null);
 
-  const API_BASE_URL = (import.meta.env.VITE_API_URL || "https://beckendflyio.vercel.app/").replace(/\/+$/, "");
+  // ✅ fix: hapus trailing slash & jgn tambahkan /api dua kali
+  const API_BASE_URL = (import.meta.env.VITE_API_URL || "https://beckendflyio.vercel.app/api").replace(/\/+$/, "");
+
   const totalPrice = bundle?.bundlePrice * customerData.quantity;
 
   useEffect(() => {
@@ -80,78 +82,81 @@ const BundleCheckout = () => {
     setPaymentProof(file);
   };
 
- const handleConfirmPayment = async () => {
-  if (!paymentProof) return alert("Upload bukti pembayaran terlebih dahulu");
-  if (!customerData.phone) return alert("Nomor HP wajib diisi");
+  const handleConfirmPayment = async () => {
+    if (!paymentProof) return alert("Upload bukti pembayaran terlebih dahulu");
+    if (!customerData.phone) return alert("Nomor HP wajib diisi");
 
-  setIsProcessing(true);
-  const orderReference = generateBundleReference();
-  const totalPrice = bundle.bundlePrice * customerData.quantity;
+    setIsProcessing(true);
+    const orderReference = generateBundleReference();
+    const totalPrice = bundle.bundlePrice * customerData.quantity;
 
-  try {
-    // 1️⃣ CREATE ORDER
-    const resOrder = await fetch(`${API_BASE_URL}/api/bundle/create-order`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        order_reference: orderReference,
-        bundle_id: bundle.id,                     // wajib
-        bundle_name: bundle.name,                 // wajib
-        bundle_description: bundle.description || "", // optional
-        bundle_price: bundle.bundlePrice,         // wajib
-        original_price: bundle.originalPrice,     // wajib
-        savings: bundle.savings,                   // wajib
-        quantity: customerData.quantity,           // wajib
-        total_price: totalPrice,                   // wajib
-        customer_name: customerData.name,         // wajib
-        customer_phone: customerData.phone,       // wajib
-        customer_email: customerData.email || "", // optional
-        status: "pending",                         // wajib
-      }),
-    });
+    try {
+      // 1️⃣ CREATE ORDER
+      const resOrder = await fetch(`${API_BASE_URL}/bundle/create-order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_reference: orderReference,
+          bundle_id: bundle.id,
+          bundle_name: bundle.name,
+          bundle_description: bundle.description || "",
+          bundle_price: bundle.bundlePrice,
+          original_price: bundle.originalPrice,
+          savings: bundle.savings,
+          quantity: customerData.quantity,
+          total_price: totalPrice,
+          customer_name: customerData.name,
+          customer_phone: customerData.phone,
+          customer_email: customerData.email || "",
+          status: "pending",
+        }),
+      });
 
-    if (!resOrder.ok) throw new Error("Gagal membuat order");
-    const orderResult = await resOrder.json();
-    if (!orderResult.success) throw new Error(orderResult.message);
+      if (!resOrder.ok) throw new Error("Gagal membuat order");
+      const orderResult = await resOrder.json();
+      if (!orderResult.success) throw new Error(orderResult.message);
 
-    // 2️⃣ UPLOAD FILE KE SUPABASE
-    setUploading(true);
-    const ext = paymentProof.name.split(".").pop();
-    const filePath = `bundle-payments/${orderReference}.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from("bukti_pembayaran")
-      .upload(filePath, paymentProof, { upsert: true });
-    if (uploadError) throw uploadError;
+      // 2️⃣ UPLOAD FILE KE SUPABASE
+      setUploading(true);
+      const ext = paymentProof.name.split(".").pop();
+      const filePath = `bundle-payments/${orderReference}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("bukti_pembayaran")
+        .upload(filePath, paymentProof, { upsert: true });
+      if (uploadError) throw uploadError;
 
-    // 3️⃣ DAPATKAN PUBLIC URL
-    const { data: publicUrlData } = supabase.storage
-      .from("bukti_pembayaran")
-      .getPublicUrl(filePath);
-    const publicUrl = publicUrlData.publicUrl;
+      // 3️⃣ GET PUBLIC URL
+      const { data: publicUrlData } = supabase.storage
+        .from("bukti_pembayaran")
+        .getPublicUrl(filePath);
+      const publicUrl = publicUrlData.publicUrl;
 
-    // 4️⃣ UPDATE ORDER DI MYSQL
-    const resUpdate = await fetch(`${API_BASE_URL}/api/bundle/update-payment-proof`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ order_reference: orderReference, payment_proof_url: publicUrl }),
-    });
-    if (!resUpdate.ok) throw new Error("Gagal update payment proof");
-    const updateResult = await resUpdate.json();
-    if (!updateResult.success) throw new Error(updateResult.message);
+      // 4️⃣ UPDATE PAYMENT PROOF
+      const resUpdate = await fetch(`${API_BASE_URL}/bundle/update-payment-proof`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_reference: orderReference,
+          payment_proof_url: publicUrl,
+        }),
+      });
 
-    setOrderData({ ...orderResult.data, payment_proof_url: publicUrl });
-    setOrderStatus("waiting_verification");
-    alert("✅ Bukti pembayaran berhasil diunggah. Tunggu verifikasi admin.");
-  } catch (err) {
-    console.error("❌ Error saat konfirmasi pembayaran:", err);
-    setOrderStatus("failed");
-    alert("Gagal konfirmasi pembayaran: " + err.message);
-  } finally {
-    setIsProcessing(false);
-    setUploading(false);
-  }
-};
+      if (!resUpdate.ok) throw new Error("Gagal update payment proof");
+      const updateResult = await resUpdate.json();
+      if (!updateResult.success) throw new Error(updateResult.message);
 
+      setOrderData({ ...orderResult.data, payment_proof_url: publicUrl });
+      setOrderStatus("waiting_verification");
+      alert("✅ Bukti pembayaran berhasil diunggah. Tunggu verifikasi admin.");
+    } catch (err) {
+      console.error("❌ Error saat konfirmasi pembayaran:", err);
+      setOrderStatus("failed");
+      alert("Gagal konfirmasi pembayaran: " + err.message);
+    } finally {
+      setIsProcessing(false);
+      setUploading(false);
+    }
+  };
 
   const handleNewOrder = () => {
     setCustomerData((prev) => ({
@@ -174,8 +179,7 @@ const BundleCheckout = () => {
           <div className="success-icon">🕒</div>
           <h2>Pembayaran Terkirim!</h2>
           <p>
-            Silakan <strong>hubungi admin</strong> untuk verifikasi bukti
-            pembayaran dalam waktu maksimal <strong>10 menit</strong>.
+            Silakan <strong>hubungi admin</strong> untuk verifikasi bukti pembayaran dalam waktu maksimal <strong>10 menit</strong>.
           </p>
           <div className="success-details">
             <p><strong>Order Reference:</strong> {orderData.order_reference}</p>
@@ -205,6 +209,7 @@ const BundleCheckout = () => {
 
       {(orderStatus === null || orderStatus === "failed") && (
         <div className="checkout-layout">
+          {/* 🧾 Ringkasan Pesanan */}
           <div className="order-summary">
             <h3>Ringkasan Pesanan</h3>
             <div className="bundle-detail">
@@ -265,6 +270,7 @@ const BundleCheckout = () => {
             </div>
           </div>
 
+          {/* 🧍‍♂️ Form Customer */}
           <div className="customer-form">
             <h3>Data Customer & Pembayaran</h3>
             <form onSubmit={(e) => e.preventDefault()}>
