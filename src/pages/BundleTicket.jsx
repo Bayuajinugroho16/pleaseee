@@ -61,7 +61,7 @@ const BundleTicket = () => {
       originalPrice: 60000,
       bundlePrice: 50000,
       savings: 10000,
-      image: "/film/Paket3.jpg", // GANTI: dari placeholder URL yang error
+      image: "/film/Paket9.png", // GANTI: dari placeholder URL yang error
       features: [
         "1 tiket kompetisi 1",
         "1 tiket kompetisi 2", 
@@ -138,7 +138,7 @@ const BundleTicket = () => {
       originalPrice: 285000,
       bundlePrice: 260000,
       savings: 25000,
-      image: "/film/Paket9.jpg",
+      image: "/film/Paket3.jpg",
       features: [
         "1 tiket kompetisi",
         "All Merchandise",
