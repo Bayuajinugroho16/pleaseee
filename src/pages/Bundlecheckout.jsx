@@ -26,7 +26,8 @@ const BundleCheckout = () => {
   const [orderData, setOrderData] = useState(null);
 
   // ✅ fix: hapus trailing slash & jgn tambahkan /api dua kali
-  const API_BASE_URL = (import.meta.env.VITE_API_URL || "https://beckendflyio.vercel.app/api").replace(/\/+$/, "");
+  const API_BASE_URL = (import.meta.env.VITE_API_URL?.replace(/\/+$/, '') || 'https://beckendflyio.vercel.app/api');
+
 
   const totalPrice = bundle?.bundlePrice * customerData.quantity;
 
