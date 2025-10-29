@@ -638,3 +638,45 @@ th {
 .reject-btn:hover {
   background-color: #c82333;
 }
+/* Responsive adjustments for MyTickets / AdminDatabase tables */
+@media (max-width: 768px) {
+  .bookings-table table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .bookings-table th,
+  .bookings-table td {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .order-type {
+    padding: 2px 6px;
+    font-size: 0.7rem;
+  }
+
+  .status {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+  }
+
+  .view-proof-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .payment-modal {
+    width: 95%;
+    margin: 10px;
+  }
+
+  .modal-content {
+    padding: 15px;
+  }
+
+  .payment-image {
+    max-height: 250px;
+  }
+}

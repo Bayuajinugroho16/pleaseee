@@ -1,238 +1,191 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navigation from "../components/Navigation";
-import "./AdminDatabase.css";
+import "./AdminDatabase.css"; // pakai style sama
 
-const AdminDatabase = () => {
-  const [bookings, setBookings] = useState([]);
-  const [bundleOrders, setBundleOrders] = useState([]);
+const MyTickets = () => {
+  const { user } = useAuth();
+  const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedTicket, setSelectedTicket] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  const { user, isAdmin } = useAuth();
-  const navigate = useNavigate();
-
-  // Redirect if not admin
   useEffect(() => {
-    if (!isAdmin && !loading) navigate("/home");
-  }, [isAdmin, loading, navigate]);
-
-  // Fetch bookings and bundles
-  useEffect(() => {
-    if (isAdmin) fetchAllData();
-  }, [isAdmin]);
-
-  const fetchAllData = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Admin token not found");
-
-      // Tambah cache-busting dan no-store
-      const res = await fetch(
-        `https://beckendflyio.vercel.app/api/admin/all-bookings?_=${Date.now()}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        }
-      );
-
-      if (!res.ok) throw new Error("Failed to fetch bookings");
-
-      const result = await res.json();
-
-      // Pastikan data ada dan array
-      setBookings(
-        Array.isArray(result.data?.bookings) ? result.data.bookings : []
-      );
-      setBundleOrders(
-        Array.isArray(result.data?.bundleOrders) ? result.data.bundleOrders : []
-      );
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-    } finally {
+    if (!user?.username) {
       setLoading(false);
+      return;
     }
-  };
 
-  const getAllOrders = () => {
-    const regular = bookings.map((b) => ({
-      ...b,
-      order_type: "regular",
-      reference: b.booking_reference,
-      display_customer: b.customer_name,
-      display_movie: b.movie_title,
-      display_amount: Number(b.total_amount) || 0,
-      display_status: b.status,
-      has_payment_image: !!b.payment_url,
-      payment_url: b.payment_url || null,
-      // pastikan selalu konversi ke Date object yang valid
-      display_date: b.booking_date ? new Date(b.booking_date) : new Date(0),
-    }));
+    const fetchTickets = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-    const bundle = bundleOrders.map((b) => ({
-      ...b,
-      order_type: "bundle",
-      reference: b.order_reference,
-      display_customer: b.customer_name,
-      display_movie: b.bundle_name,
-      display_amount: Number(b.total_amount || b.quantity) || 0,
-      display_status: b.status,
-      has_payment_image: !!b.payment_proof,
-      payment_url: b.payment_proof || null,
-      display_date: b.booking_date
-        ? new Date(b.booking_date)
-        : b.order_date
-        ? new Date(b.order_date)
-        : new Date(0),
-    }));
+        const token = localStorage.getItem("token");
+        const res = await fetch(
+          `https://beckendflyio.vercel.app/api/bookings/my-bookings?username=${user.username}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
-    // gabungkan dan urutkan dari terbaru
-    return [...regular, ...bundle].sort(
-      (a, b) => b.display_date - a.display_date
-    );
-  };
+        if (!res.ok) throw new Error("Failed to fetch tickets");
 
-  const allOrders = getAllOrders();
+        const result = await res.json();
+        const regular = result.data?.bookings || [];
+        const bundle = result.data?.bundleOrders || [];
 
-  const viewPaymentProof = (order) => {
-    if (!order.has_payment_image) {
+        const allTickets = [
+          ...regular.map((b) => ({
+            ...b,
+            order_type: "regular",
+            display_movie: b.movie_title,
+            display_amount: b.total_amount,
+            has_payment_image: !!b.payment_url,
+            payment_url: b.payment_url || null,
+            display_date: b.booking_date,
+          })),
+          ...bundle.map((b) => ({
+            ...b,
+            order_type: "bundle",
+            display_movie: b.bundle_name,
+            display_amount: b.total_amount || b.quantity,
+            has_payment_image: !!b.payment_proof,
+            payment_url: b.payment_proof || null,
+            display_date: b.booking_date || b.order_date,
+          })),
+        ].sort((a, b) => new Date(b.display_date) - new Date(a.display_date));
+
+        setTickets(allTickets);
+      } catch (err) {
+        console.error(err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTickets();
+  }, [user]);
+
+  const viewPaymentProof = (ticket) => {
+    if (!ticket.has_payment_image) {
       alert("❌ No payment proof available");
       return;
     }
-    setSelectedOrder(order);
+    setSelectedTicket(ticket);
     setShowPaymentModal(true);
   };
 
-  const updateOrderStatus = async (order, newStatus) => {
-    try {
-      const token = localStorage.getItem("token");
-      const endpoint =
-        order.order_type === "bundle"
-          ? `https://beckendflyio.vercel.app/api/admin/bundle-orders/${order.reference}/status`
-          : `https://beckendflyio.vercel.app/api/admin/bookings/${order.reference}/status`;
-
-      const res = await fetch(endpoint, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Failed to update status");
-
-      fetchAllData(); // refresh data
-    } catch (err) {
-      console.error(err);
-      alert("❌ Error updating status: " + err.message);
-    }
-  };
-
-  const handleConfirmReject = async (newStatus) => {
-    if (!selectedOrder) return;
-    const confirmed = window.confirm(
-      `Set status "${newStatus}" for ${selectedOrder.display_customer}?`
+  if (loading)
+    return (
+      <div className="loading">
+        <div className="spinner"></div>
+        Loading tickets...
+      </div>
     );
-    if (!confirmed) return;
-
-    await updateOrderStatus(selectedOrder, newStatus);
-    setShowPaymentModal(false);
-  };
-
-  if (loading) return <div className="admin-container">Loading...</div>;
 
   return (
     <div className="admin-container">
       <Navigation />
-      <h1>🗃️ Database Viewer</h1>
-      <p>Logged in as: {user?.username}</p>
-      <button onClick={fetchAllData}>🔄 Refresh Data</button>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      <div className="admin-content">
+        <h1>My Tickets</h1>
+        {error && <div className="error-banner">{error}</div>}
 
-      <table>
-        <thead>
-          <tr>
-            <th>Type</th>
-            <th>ID</th>
-            <th>Customer</th>
-            <th>Movie/Bundle</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Payment Proof</th>
-            <th>Actions</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {allOrders.map((o, i) => (
-            <tr key={`${o.order_type}-${o.id || i}`}>
-              <td>{o.order_type === "bundle" ? "🎁 Bundle" : "🎬 Movie"}</td>
-              <td>{o.id}</td>
-              <td>{o.display_customer}</td>
-              <td>{o.display_movie}</td>
-              <td>Rp {o.display_amount?.toLocaleString()}</td>
-              <td>{o.display_status}</td>
-              <td>
-                {o.has_payment_image ? (
-                  <button onClick={() => viewPaymentProof(o)}>
-                    👁️ View Proof
-                  </button>
-                ) : (
-                  "❌ No proof"
-                )}
-              </td>
-              <td>
-                <select
-                  value={o.display_status}
-                  onChange={(e) => updateOrderStatus(o, e.target.value)}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </td>
-              <td>{new Date(o.display_date).toLocaleDateString("id-ID")}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        {tickets.length === 0 ? (
+          <div className="no-data">
+            <div className="no-tickets-icon">🎭</div>
+            <p>No tickets found</p>
+          </div>
+        ) : (
+          <div className="bookings-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>ID</th>
+                  <th>Movie/Bundle</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Payment Proof</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tickets.map((t) => (
+                  <tr key={t.id}>
+                    <td>
+                      <span
+                        className={`order-type ${
+                          t.order_type === "bundle" ? "bundle" : "regular"
+                        }`}
+                      >
+                        {t.order_type === "bundle" ? "🎁 Bundle" : "🎬 Movie"}
+                      </span>
+                    </td>
+                    <td>{t.id}</td>
+                    <td>{t.display_movie}</td>
+                    <td>Rp {t.display_amount?.toLocaleString()}</td>
+                    <td>
+                      <span className={`status ${t.status}`}>
+                        {t.status}
+                      </span>
+                    </td>
+                    <td className="proof-cell">
+                      {t.has_payment_image ? (
+                        <button
+                          className="view-proof-btn"
+                          onClick={() => viewPaymentProof(t)}
+                        >
+                          👁️ View Proof
+                        </button>
+                      ) : (
+                        <span className="no-proof">❌ No proof</span>
+                      )}
+                    </td>
+                    <td>
+                      {t.display_date
+                        ? new Date(t.display_date).toLocaleDateString("id-ID")
+                        : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Payment Modal */}
-      {showPaymentModal && selectedOrder && (
+      {showPaymentModal && selectedTicket && (
         <div
           className="modal-overlay"
           onClick={() => setShowPaymentModal(false)}
         >
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Bukti Pembayaran - {selectedOrder.display_customer}</h3>
-
-            {/* tampilkan gambar hanya jika ada payment_url */}
-            {selectedOrder.payment_url ? (
-              <img
-                src={selectedOrder.payment_url}
-                alt="Payment Proof"
-                style={{ maxWidth: "100%", height: "auto" }}
-              />
-            ) : (
-              <p>❌ Tidak ada bukti pembayaran</p>
-            )}
-
-            <div className="modal-actions">
-              <button onClick={() => handleConfirmReject("confirmed")}>
-                ✅ Confirm
+          <div
+            className="payment-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h3>Payment Proof - {selectedTicket.display_movie}</h3>
+              <button
+                className="close-btn"
+                onClick={() => setShowPaymentModal(false)}
+              >
+                &times;
               </button>
-              <button onClick={() => handleConfirmReject("rejected")}>
-                ❌ Reject
-              </button>
-              <button onClick={() => setShowPaymentModal(false)}>Close</button>
+            </div>
+            <div className="modal-content">
+              {selectedTicket.payment_url ? (
+                <img
+                  src={selectedTicket.payment_url}
+                  alt="Payment Proof"
+                  className="payment-image"
+                />
+              ) : (
+                <div className="no-payment-proof">
+                  ❌ No payment proof available
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -241,4 +194,4 @@ const AdminDatabase = () => {
   );
 };
 
-export default AdminDatabase;
+export default MyTickets;
