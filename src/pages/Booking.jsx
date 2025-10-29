@@ -123,7 +123,7 @@ const Booking = () => {
       console.log("🔄 Manually refreshing seat data...");
       const showtimeId = findShowtimeId(showtime);
       const response = await fetch(
-        `https://backendflyio.vercel.app/api/bookings/occupied-seats?showtime_id=${showtimeId}&movie_title=${encodeURIComponent(
+        `https://beckendflyio.vercel.app/api/bookings/occupied-seats?showtime_id=${showtimeId}&movie_title=${encodeURIComponent(
           movie.title
         )}&refresh=${Date.now()}`
       );
