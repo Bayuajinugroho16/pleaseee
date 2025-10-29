@@ -32,16 +32,26 @@ const AdminDatabase = () => {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Admin token not found");
 
+      // Tambah cache-busting dan no-store
       const res = await fetch(
-        "https://beckendflyio.vercel.app/api/admin/all-bookings",
-        { headers: { Authorization: `Bearer ${token}` } }
+        `https://beckendflyio.vercel.app/api/admin/all-bookings?_=${Date.now()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }
       );
 
       if (!res.ok) throw new Error("Failed to fetch bookings");
 
       const result = await res.json();
-      setBookings(result.data.bookings || []);
-      setBundleOrders(result.data.bundleOrders || []);
+
+      // Pastikan data ada dan array
+      setBookings(
+        Array.isArray(result.data?.bookings) ? result.data.bookings : []
+      );
+      setBundleOrders(
+        Array.isArray(result.data?.bundleOrders) ? result.data.bundleOrders : []
+      );
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -57,11 +67,12 @@ const AdminDatabase = () => {
       reference: b.booking_reference,
       display_customer: b.customer_name,
       display_movie: b.movie_title,
-      display_amount: b.total_amount,
+      display_amount: Number(b.total_amount) || 0,
       display_status: b.status,
-      has_payment_image: !!b.payment_url, // ganti cek payment_url
-      payment_url: b.payment_url || null, // simpan url di object
-      display_date: b.booking_date,
+      has_payment_image: !!b.payment_url,
+      payment_url: b.payment_url || null,
+      // pastikan selalu konversi ke Date object yang valid
+      display_date: b.booking_date ? new Date(b.booking_date) : new Date(0),
     }));
 
     const bundle = bundleOrders.map((b) => ({
@@ -70,15 +81,20 @@ const AdminDatabase = () => {
       reference: b.order_reference,
       display_customer: b.customer_name,
       display_movie: b.bundle_name,
-      display_amount: b.total_amount || b.quantity,
+      display_amount: Number(b.total_amount || b.quantity) || 0,
       display_status: b.status,
       has_payment_image: !!b.payment_proof,
-      payment_url: b.payment_proof || null, // bundle masih pakai payment_proof
-      display_date: b.booking_date || b.order_date,
+      payment_url: b.payment_proof || null,
+      display_date: b.booking_date
+        ? new Date(b.booking_date)
+        : b.order_date
+        ? new Date(b.order_date)
+        : new Date(0),
     }));
 
+    // gabungkan dan urutkan dari terbaru
     return [...regular, ...bundle].sort(
-      (a, b) => new Date(b.display_date) - new Date(a.display_date)
+      (a, b) => b.display_date - a.display_date
     );
   };
 
