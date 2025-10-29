@@ -102,20 +102,14 @@ const BundleCheckout = () => {
     try {
       // 1️⃣ CREATE ORDER
       const resOrder = await fetch(`${API_BASE_URL}/api/bundle/create-order`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_reference: orderReference,
-          bundle_id: bundle.id,
-          bundle_name: bundle.name,
-          customer_name: customerData.name,
-          customer_phone: customerData.phone,
-          customer_email: customerData.email,
-          quantity: customerData.quantity,
-          total_price: totalPrice,
-          status: "pending",
-        }),
-      });
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bundle_name: bundle.name,
+        quantity: customerData.quantity,
+        customer_name: customerData.name,
+      }),
+    });
 
       if (!resOrder.ok) throw new Error("Gagal membuat order");
       const orderResult = await resOrder.json();
