@@ -25,45 +25,39 @@ const AdminDatabase = () => {
     if (isAdmin) fetchAllData();
   }, [isAdmin]);
 
-const fetchAllData = async () => {
-  try {
-    setLoading(true);
-    setError("");
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("Admin token not found");
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Admin token not found");
 
-    const res = await fetch("https://beckendflyio.vercel.app/api/admin/all-orders", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const res = await fetch("https://beckendflyio.vercel.app/api/admin/all-bookings", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    if (!res.ok) throw new Error("Failed to fetch orders");
+      if (!res.ok) throw new Error("Failed to fetch bookings");
 
-    const result = await res.json();
-
-    // backend sekarang sudah gabungkan bookings + bundles
-    const allOrdersData = result.data || [];
-
-    // pisahkan kalau masih mau beda regular vs bundle
-    setBookings(allOrdersData.filter(o => o.order_type === "regular"));
-    setBundleOrders(allOrdersData.filter(o => o.order_type === "bundle"));
-  } catch (err) {
-    console.error(err);
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
-
+      const result = await res.json();
+      setBookings(result.data.bookings || []);
+      setBundleOrders(result.data.bundleOrders || []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getAllOrders = () => {
     const regular = bookings.map((b) => ({
       ...b,
       order_type: "regular",
+      reference: b.booking_reference,
       display_customer: b.customer_name,
       display_movie: b.movie_title,
       display_amount: b.total_amount,
       display_status: b.status,
-      reference: b.booking_reference,
       has_payment_image: !!b.payment_proof,
       display_date: b.booking_date,
     }));
@@ -71,11 +65,11 @@ const fetchAllData = async () => {
     const bundle = bundleOrders.map((b) => ({
       ...b,
       order_type: "bundle",
-      display_customer: b.customer_name,
-      display_movie: b.movie_title || b.bundle_name,
-      display_amount: b.total_amount || b.total_price,
-      display_status: b.status,
       reference: b.order_reference,
+      display_customer: b.customer_name,
+      display_movie: b.bundle_name,
+      display_amount: b.total_amount || b.quantity,
+      display_status: b.status,
       has_payment_image: !!b.payment_proof,
       display_date: b.booking_date || b.order_date,
     }));
@@ -96,20 +90,23 @@ const fetchAllData = async () => {
     setShowPaymentModal(true);
   };
 
-  const updateOrderStatus = async (reference, newStatus) => {
+  const updateOrderStatus = async (reference, newStatus, orderType) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `https://beckendflyio.vercel.app/api/admin/booking/${reference}/status`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
+      let endpoint = "";
+
+      if (orderType === "regular") endpoint = `https://beckendflyio.vercel.app/api/admin/bookings/${reference}/status`;
+      else if (orderType === "bundle") endpoint = `https://beckendflyio.vercel.app/api/admin/bundle-orders/${reference}/status`;
+
+      const res = await fetch(endpoint, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
       const result = await res.json();
       if (result.success) fetchAllData();
       else alert("❌ Failed: " + result.message);
@@ -126,7 +123,7 @@ const fetchAllData = async () => {
     );
     if (!confirmed) return;
 
-    await updateOrderStatus(selectedOrder.reference, newStatus);
+    await updateOrderStatus(selectedOrder.reference, newStatus, selectedOrder.order_type);
     setShowPaymentModal(false);
   };
 
@@ -174,7 +171,7 @@ const fetchAllData = async () => {
                 <select
                   value={o.display_status}
                   onChange={(e) =>
-                    updateOrderStatus(o.reference, e.target.value)
+                    updateOrderStatus(o.reference, e.target.value, o.order_type)
                   }
                 >
                   <option value="pending">Pending</option>
