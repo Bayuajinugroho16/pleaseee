@@ -36,14 +36,16 @@ const fetchAllData = async () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!res.ok) throw new Error("Failed to fetch bookings");
+    if (!res.ok) throw new Error("Failed to fetch orders");
 
     const result = await res.json();
-    const bookingsData = result.data?.bookings || [];
-    const bundleData = result.data?.bundleOrders || [];
 
-    setBookings(bookingsData);
-    setBundleOrders(bundleData);
+    // backend sekarang sudah gabungkan bookings + bundles
+    const allOrdersData = result.data || [];
+
+    // pisahkan kalau masih mau beda regular vs bundle
+    setBookings(allOrdersData.filter(o => o.order_type === "regular"));
+    setBundleOrders(allOrdersData.filter(o => o.order_type === "bundle"));
   } catch (err) {
     console.error(err);
     setError(err.message);
