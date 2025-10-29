@@ -67,7 +67,6 @@ const MyTickets = () => {
     return [];
   };
 
-  // ✅ FIXED: Fetch tickets dengan error handling yang better
   const fetchTickets = async () => {
     if (!user?.username) {
       setLoading(false);
@@ -75,52 +74,49 @@ const MyTickets = () => {
     }
 
     try {
-      console.log(`🎫 Fetching tickets for username: ${user.username}`);
+      setLoading(true);
+      setError("");
 
-      let serverTickets = [];
-
-      // ✅ COBA DARI SERVER DULU
-      try {
-        const response = await fetch(
-          `https://beckendflyio.vercel.app/api/bookings/my-bookings?username=${user.username}`
-        );
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            console.log("✅ Server tickets:", result.data);
-            serverTickets = result.data;
-          }
-        }
-      } catch (serverError) {
-        console.log(
-          "⚠️ Server fetch failed, using emergency data:",
-          serverError.message
-        );
-      }
-
-      // ✅ JIKA SERVER ERROR ATAU TIDAK ADA DATA, GUNAKAN EMERGENCY DATA
-      const emergencyTickets = getEmergencyTickets();
-      const mockTickets = createMockTicketFromBooking();
-
-      const allTickets = [
-        ...serverTickets,
-        ...emergencyTickets,
-        ...mockTickets,
-      ];
-
-      console.log(
-        "📊 All tickets for user:",
-        user.username,
-        "Total:",
-        allTickets.length
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `https://beckendflyio.vercel.app/api/bookings/my-bookings?username=${user.username}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log("🔍 USER TICKETS BREAKDOWN:", allTickets);
+
+      if (!response.ok) throw new Error("Failed to fetch tickets");
+
+      const result = await response.json();
+      if (!result.success)
+        throw new Error(result.message || "No tickets found");
+
+      const regular = result.data.bookings.map((b) => ({
+        ...b,
+        order_type: "regular",
+        display_movie: b.movie_title,
+        display_amount: b.total_amount,
+        display_status: b.status,
+        payment_url: b.payment_url || null,
+        display_date: b.booking_date,
+      }));
+
+      const bundle = result.data.bundleOrders.map((b) => ({
+        ...b,
+        order_type: "bundle",
+        display_movie: b.bundle_name,
+        display_amount: b.total_amount || b.quantity,
+        display_status: b.status,
+        payment_url: b.payment_url || null,
+        display_date: b.booking_date || b.order_date,
+      }));
+
+      const allTickets = [...regular, ...bundle].sort(
+        (a, b) => new Date(b.display_date) - new Date(a.display_date)
+      );
 
       setTickets(allTickets);
-    } catch (error) {
-      console.error("❌ Fetch tickets error:", error);
-      setError("Failed to load tickets");
+    } catch (err) {
+      console.error("❌ Fetch tickets error:", err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -135,21 +131,14 @@ const MyTickets = () => {
 
   // ✅ Handle View Ticket
   const handleViewTicket = (ticket) => {
-    console.log("🎫 Viewing ticket:", ticket);
-
-    // Navigate ke ticket detail page atau show modal
-    if (ticket.is_emergency || ticket.is_mock) {
-      // Untuk emergency tickets, tampilkan alert dengan info
-      alert(
-        `Emergency Ticket\nBooking Ref: ${ticket.booking_reference}\nMovie: ${ticket.movie_title}\nPlease contact admin for full ticket details.`
-      );
+    if (ticket.payment_url) {
+      setSelectedTicket(ticket);
+      setShowPaymentModal(true);
     } else {
-      // Untuk regular tickets, navigate ke ticket page
-      // navigate(`/ticket/${ticket.booking_reference}`);
       alert(
-        `Ticket: ${ticket.movie_title}\nSeats: ${ticket.seat_numbers?.join(
+        `Ticket: ${ticket.display_movie}\nSeats: ${ticket.seat_numbers?.join(
           ", "
-        )}`
+        )}\nStatus: ${ticket.display_status}`
       );
     }
   };
@@ -331,6 +320,34 @@ Contact admin with this information.
                         e.target.style.display = "none";
                       }}
                     />
+                  </div>
+                )}
+
+                {/* Payment Proof Modal */}
+                {showPaymentModal && selectedTicket && (
+                  <div
+                    className="modal-overlay"
+                    onClick={() => setShowPaymentModal(false)}
+                  >
+                    <div
+                      className="modal-content"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <h3>Bukti Pembayaran - {selectedTicket.display_movie}</h3>
+                      {selectedTicket.payment_url ? (
+                        <img
+                          src={selectedTicket.payment_url}
+                          alt="Payment Proof"
+                          style={{ maxWidth: "100%", height: "auto" }}
+                          onError={(e) => (e.target.style.display = "none")}
+                        />
+                      ) : (
+                        <p>❌ Tidak ada bukti pembayaran</p>
+                      )}
+                      <button onClick={() => setShowPaymentModal(false)}>
+                        Close
+                      </button>
+                    </div>
                   </div>
                 )}
 
