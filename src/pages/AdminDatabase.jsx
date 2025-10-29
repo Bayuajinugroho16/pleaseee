@@ -29,64 +29,29 @@ const fetchAllData = async () => {
   try {
     setLoading(true);
     setError("");
-
     const token = localStorage.getItem("token");
     if (!token) throw new Error("Admin token not found");
 
-    // ✅ Ambil bookings & bundle orders
-    const [bookingsRes, bundleRes] = await Promise.all([
-      fetch("https://beckendflyio.vercel.app/api/admin/all-bookings", {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-      fetch("https://beckendflyio.vercel.app/api/admin/bundle-orders", {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-    ]);
-
-    if (!bookingsRes.ok) throw new Error("Failed to fetch bookings");
-    if (!bundleRes.ok) throw new Error("Failed to fetch bundle orders");
-
-    const bookingsData = await bookingsRes.json();
-    const bundleData = await bundleRes.json();
-
-    // ✅ Pastikan selalu array
-    const bookingsArray = Array.isArray(bookingsData.data) ? bookingsData.data : [];
-    const bundleArray = Array.isArray(bundleData.data) ? bundleData.data : [];
-
-    // ✅ Format bookings
-    const formattedBookings = bookingsArray.map((b) => {
-      let seats = [];
-      if (typeof b.seat_numbers === "string") {
-        try {
-          seats = JSON.parse(b.seat_numbers);
-          if (!Array.isArray(seats)) seats = [seats];
-        } catch {
-          seats = b.seat_numbers.split(",").map((s) => s.trim());
-        }
-      } else if (Array.isArray(b.seat_numbers)) {
-        seats = b.seat_numbers;
-      }
-      return { ...b, seat_numbers: seats, total_amount: Number(b.total_amount) || 0 };
+    const res = await fetch("https://beckendflyio.vercel.app/api/admin/all-orders", {
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    // ✅ Format bundle orders
-    const formattedBundles = bundleArray.map((b) => ({
-      ...b,
-      total_amount: Number(b.total_amount || b.total_price) || 0,
-      booking_date: b.booking_date || b.order_date,
-    }));
+    if (!res.ok) throw new Error("Failed to fetch bookings");
 
-    setBookings(formattedBookings);
-    setBundleOrders(formattedBundles);
+    const result = await res.json();
+    const bookingsData = result.data?.bookings || [];
+    const bundleData = result.data?.bundleOrders || [];
+
+    setBookings(bookingsData);
+    setBundleOrders(bundleData);
   } catch (err) {
     console.error(err);
     setError(err.message);
-    setBookings([]);
-    setBundleOrders([]);
   } finally {
     setLoading(false);
   }
 };
+
 
   const getAllOrders = () => {
     const regular = bookings.map((b) => ({
