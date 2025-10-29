@@ -9,37 +9,38 @@ const MyTickets = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ✅ EMERGENCY: Get tickets from localStorage
   const getEmergencyTickets = () => {
-    try {
-      // Cari dari emergency payments
-      const emergencyPayments = JSON.parse(
-        localStorage.getItem("emergency_payments") || "[]"
-      );
-      const userTickets = emergencyPayments.filter(
-        (payment) =>
-          // Jika ada username di payment data, atau ambil semua
-          !payment.username || payment.username === user?.username
-      );
+  try {
+    const emergencyPayments = JSON.parse(
+      localStorage.getItem("emergency_payments") || "[]"
+    );
 
-      console.log("🆘 EMERGENCY TICKETS:", userTickets);
-      return userTickets.map((payment) => ({
-        id: `emergency_${payment.booking_reference}`,
-        booking_reference: payment.booking_reference,
-        movie_title: payment.movie_title || "Movie (Emergency)",
-        seat_numbers: payment.seat_numbers || ["A1"],
-        total_amount: payment.total_amount || 0,
-        status: "confirmed",
-        payment_proof: payment.payment_proof || payment.payment_url,
-        payment_filename: payment.payment_filename,
-        booking_date: payment.saved_at || payment.booking_date,
-        is_emergency: true,
-      }));
-    } catch (error) {
-      console.error("❌ Emergency tickets error:", error);
-      return [];
-    }
-  };
+    // Filter hanya untuk user login
+    const userTickets = emergencyPayments.filter(
+      (payment) =>
+        payment.customer_name === user?.username ||
+        payment.customer_email === user?.email
+    );
+
+    console.log("🆘 EMERGENCY TICKETS (filtered):", userTickets);
+
+    return userTickets.map((payment) => ({
+      id: `emergency_${payment.booking_reference}`,
+      booking_reference: payment.booking_reference,
+      movie_title: payment.movie_title || "Movie (Emergency)",
+      seat_numbers: payment.seat_numbers || ["A1"],
+      total_amount: payment.total_amount || 0,
+      status: "confirmed",
+      payment_proof: payment.payment_proof || payment.payment_url,
+      payment_filename: payment.payment_filename,
+      booking_date: payment.saved_at || payment.booking_date,
+      is_emergency: true,
+    }));
+  } catch (error) {
+    console.error("❌ Emergency tickets error:", error);
+    return [];
+  }
+};
 
   // ✅ EMERGENCY: Create mock ticket from recent booking
   const createMockTicketFromBooking = () => {
