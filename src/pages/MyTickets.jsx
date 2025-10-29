@@ -11,64 +11,59 @@ const MyTickets = () => {
 
   
 
-  // ✅ FIXED: Fetch tickets dengan error handling yang better
-  const fetchTickets = async () => {
-    if (!user?.username) {
-      setLoading(false);
-      return;
-    }
+ const fetchTickets = async () => {
+  if (!user?.username) {
+    setLoading(false);
+    return;
+  }
+
+  try {
+    console.log(`🎫 Fetching tickets for username: ${user.username}`);
+
+    let serverTickets = [];
 
     try {
-      console.log(`🎫 Fetching tickets for username: ${user.username}`);
-
-      let serverTickets = [];
-
-      // ✅ COBA DARI SERVER DULU
-      try {
-        const response = await fetch(
-          `https://beckendflyio.vercel.app/api/bookings/my-bookings?username=${user.username}`
-        );
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            console.log("✅ Server tickets:", result.data);
-            serverTickets = result.data;
-          }
-        }
-      } catch (serverError) {
-        console.log(
-          "⚠️ Server fetch failed, using emergency data:",
-          serverError.message
-        );
-      }
-
-      // ✅ JIKA SERVER ERROR ATAU TIDAK ADA DATA, GUNAKAN EMERGENCY DATA
-      const emergencyTickets = getEmergencyTickets();
-      const mockTickets = createMockTicketFromBooking();
-
-      const allTickets = [
-        ...serverTickets,
-        ...emergencyTickets,
-        ...mockTickets,
-      ];
-
-      console.log(
-        "📊 All tickets for user:",
-        user.username,
-        "Total:",
-        allTickets.length
+      const response = await fetch(
+        `https://beckendflyio.vercel.app/api/bookings/my-bookings?username=${user.username}`
       );
-      console.log("🔍 USER TICKETS BREAKDOWN:", allTickets);
 
-      setTickets(allTickets);
-    } catch (error) {
-      console.error("❌ Fetch tickets error:", error);
-      setError("Failed to load tickets");
-    } finally {
-      setLoading(false);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          console.log("✅ Server tickets raw:", result.data);
+
+          // ✅ Filter hanya tiket user
+          serverTickets = result.data.filter((ticket) => {
+            // Cek beberapa kemungkinan field user
+            return (
+              ticket.customer_name === user.username ||
+              ticket.customer_email === user.email ||
+              ticket.username === user.username
+            );
+          });
+
+          console.log("✅ Server tickets filtered:", serverTickets);
+        }
+      }
+    } catch (serverError) {
+      console.log("⚠️ Server fetch failed, using emergency data:", serverError.message);
     }
-  };
+
+    // ✅ Ambil emergency & mock tickets jika server gagal
+    const emergencyTickets = getEmergencyTickets();
+    const mockTickets = createMockTicketFromBooking();
+
+    const allTickets = [...serverTickets, ...emergencyTickets, ...mockTickets];
+
+    console.log("📊 All tickets for user:", user.username, "Total:", allTickets.length);
+    setTickets(allTickets);
+  } catch (error) {
+    console.error("❌ Fetch tickets error:", error);
+    setError("Failed to load tickets");
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchTickets();
