@@ -136,7 +136,8 @@ const handleFileUpload = (e) => {
     const publicUrl = publicUrlData.publicUrl;
 
     // 4️⃣ UPDATE ORDER DI MYSQL DENGAN URL FILE
-    const resUpdate = await fetch(`${import.meta.env.VITE_API_URL}/api/bundle/update-payment-proof`, {
+    const baseURL = import.meta.env.VITE_API_URL.replace(/\/+$/, '');
+    const resUpdate = await fetch(`${baseURL  }/bundle/update-payment-proof`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ order_reference: orderReference, payment_proof_url: publicUrl }),
