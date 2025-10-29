@@ -25,7 +25,9 @@ const BundleCheckout = () => {
   const [orderStatus, setOrderStatus] = useState(null);
   const [orderData, setOrderData] = useState(null);
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/+$/, '') || 'https://beckendflyio.vercel.app';
+  const API_BASE_URL =
+    import.meta.env.VITE_API_URL?.replace(/\/+$/, "") ||
+    "https://beckendflyio.vercel.app";
   const totalPrice = bundle?.bundlePrice * customerData.quantity;
 
   useEffect(() => {
@@ -37,7 +39,8 @@ const BundleCheckout = () => {
 
     setCustomerData((prev) => ({
       ...prev,
-      name: user.username || user.name || user.email?.split("@")[0] || "Customer",
+      name:
+        user.username || user.name || user.email?.split("@")[0] || "Customer",
       phone: user.phone || "",
       email: user.email || "",
     }));
@@ -50,7 +53,10 @@ const BundleCheckout = () => {
         <div className="error-message">
           <h2>Bundle tidak ditemukan</h2>
           <p>Silakan pilih bundle terlebih dahulu</p>
-          <button onClick={() => navigate("/bundle-ticket")} className="back-btn">
+          <button
+            onClick={() => navigate("/bundle-ticket")}
+            className="back-btn"
+          >
             Kembali ke Bundle Ticket
           </button>
         </div>
@@ -63,13 +69,19 @@ const BundleCheckout = () => {
     setCustomerData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const generateBundleReference = () => `BUNDLE-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const generateBundleReference = () =>
+    `BUNDLE-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const validTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
+    const validTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "application/pdf",
+    ];
     if (!validTypes.includes(file.type)) {
       return alert("Hanya file JPG, PNG, atau PDF yang diizinkan");
     }
@@ -85,39 +97,51 @@ const BundleCheckout = () => {
     if (!customerData.phone) return alert("Nomor HP wajib diisi");
 
     setIsProcessing(true);
-    const orderReference = generateBundleReference();
-    const totalPriceCalculated = bundle.bundlePrice * customerData.quantity;
+
+    // Gunakan order_reference yang sudah ada di orderData atau generate baru
+    const orderReference =
+      orderData?.order_reference || generateBundleReference();
+    const totalPrice = bundle.bundlePrice * customerData.quantity;
 
     try {
-      // 1️⃣ CREATE ORDER
-      const resOrder = await fetch(`${API_BASE_URL}/api/bundle/create-order`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_reference: orderReference,
-          bundle_id: bundle.id,
-          bundle_name: bundle.name,
-          bundle_description: bundle.description || "",
-          bundle_price: bundle.bundlePrice,
-          original_price: bundle.originalPrice,
-          savings: bundle.savings,
-          quantity: customerData.quantity,
-          total_price: totalPriceCalculated,
-          customer_name: customerData.name,
-          customer_phone: customerData.phone,
-          customer_email: customerData.email || "",
-          status: "pending",
-        }),
-      });
+      // 1️⃣ CREATE ORDER (kalau belum ada)
+      let currentOrderReference = orderReference;
+      if (!orderData) {
+        const resOrder = await fetch(
+          `${API_BASE_URL}/api/bundle/create-order`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              order_reference: orderReference,
+              bundle_id: bundle.id,
+              bundle_name: bundle.name,
+              bundle_description: bundle.description || "",
+              bundle_price: bundle.bundlePrice,
+              original_price: bundle.originalPrice,
+              savings: bundle.savings,
+              quantity: customerData.quantity,
+              total_price: totalPrice,
+              customer_name: customerData.name,
+              customer_phone: customerData.phone,
+              customer_email: customerData.email || "",
+              status: "pending",
+            }),
+          }
+        );
 
-      if (!resOrder.ok) throw new Error("Gagal membuat order");
-      const orderResult = await resOrder.json();
-      if (!orderResult.success) throw new Error(orderResult.message);
+        if (!resOrder.ok) throw new Error("Gagal membuat order");
+        const orderResult = await resOrder.json();
+        if (!orderResult.success) throw new Error(orderResult.message);
+
+        currentOrderReference = orderResult.data.order_reference;
+        setOrderData({ ...orderResult.data });
+      }
 
       // 2️⃣ UPLOAD FILE KE SUPABASE
       setUploading(true);
       const ext = paymentProof.name.split(".").pop();
-      const filePath = `bundle-payments/${orderReference}.${ext}`;
+      const filePath = `bundle-payments/${currentOrderReference}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("bukti_pembayaran")
         .upload(filePath, paymentProof, { upsert: true });
@@ -129,21 +153,25 @@ const BundleCheckout = () => {
         .getPublicUrl(filePath);
       const publicUrl = publicUrlData.publicUrl;
 
-      // 4️⃣ UPDATE PAYMENT PROOF
-      const resUpdate = await fetch(`${API_BASE_URL}/api/bundle/update-payment-proof`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_reference: orderReference,
-          payment_proof: publicUrl, // ✅ FIX: sesuai nama field di DB
-        }),
-      });
+      // 4️⃣ UPDATE PAYMENT PROOF DI BACKEND
+      const resUpdate = await fetch(
+        `${API_BASE_URL}/api/bundle/update-payment-proof`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            order_reference: currentOrderReference,
+            payment_proof_url: publicUrl, // field ini tetap dikirim sesuai backend
+          }),
+        }
+      );
 
       if (!resUpdate.ok) throw new Error("Gagal update payment proof");
       const updateResult = await resUpdate.json();
       if (!updateResult.success) throw new Error(updateResult.message);
 
-      setOrderData({ ...orderResult.data, payment_proof: publicUrl });
+      // 5️⃣ Set state untuk UI
+      setOrderData((prev) => ({ ...prev, payment_proof: publicUrl }));
       setOrderStatus("waiting_verification");
       alert("✅ Bukti pembayaran berhasil diunggah. Tunggu verifikasi admin.");
     } catch (err) {
@@ -177,16 +205,29 @@ const BundleCheckout = () => {
           <div className="success-icon">🕒</div>
           <h2>Pembayaran Terkirim!</h2>
           <p>
-            Silakan <strong>hubungi admin</strong> untuk verifikasi bukti pembayaran dalam waktu maksimal <strong>10 menit</strong>.
+            Silakan <strong>hubungi admin</strong> untuk verifikasi bukti
+            pembayaran dalam waktu maksimal <strong>10 menit</strong>.
           </p>
           <div className="success-details">
-            <p><strong>Order Reference:</strong> {orderData.order_reference}</p>
-            <p><strong>Bundle:</strong> {orderData.bundle_name}</p>
-            <p><strong>Total:</strong> Rp {totalPrice?.toLocaleString()}</p>
-            <p><strong>Status:</strong> <span className="status-waiting">Menunggu Verifikasi Admin</span></p>
+            <p>
+              <strong>Order Reference:</strong> {orderData.order_reference}
+            </p>
+            <p>
+              <strong>Bundle:</strong> {orderData.bundle_name}
+            </p>
+            <p>
+              <strong>Total:</strong> Rp {totalPrice?.toLocaleString()}
+            </p>
+            <p>
+              <strong>Status:</strong>{" "}
+              <span className="status-waiting">Menunggu Verifikasi Admin</span>
+            </p>
           </div>
           <div className="success-actions">
-            <button onClick={() => navigate("/my-tickets")} className="view-tickets-btn">
+            <button
+              onClick={() => navigate("/my-tickets")}
+              className="view-tickets-btn"
+            >
               Lihat Status Pesanan
             </button>
             <button onClick={handleNewOrder} className="new-order-btn">
@@ -201,7 +242,9 @@ const BundleCheckout = () => {
           <div className="error-icon">❌</div>
           <h2>Pembayaran Gagal</h2>
           <p>Silakan coba lagi atau hubungi customer service</p>
-          <button onClick={handleNewOrder} className="retry-btn">Coba Lagi</button>
+          <button onClick={handleNewOrder} className="retry-btn">
+            Coba Lagi
+          </button>
         </div>
       )}
 
@@ -215,13 +258,19 @@ const BundleCheckout = () => {
                 src={bundle.image}
                 alt={bundle.name}
                 className="bundle-image"
-                onError={(e) => { e.target.src = "/images/placeholder.png"; }}
+                onError={(e) => {
+                  e.target.src = "/images/placeholder.png";
+                }}
               />
               <div className="bundle-info">
                 <h4>{bundle.name}</h4>
                 <div className="price-detail">
-                  <span className="original-price">Rp {bundle.originalPrice?.toLocaleString()}</span>
-                  <span className="bundle-price">Rp {bundle.bundlePrice?.toLocaleString()}</span>
+                  <span className="original-price">
+                    Rp {bundle.originalPrice?.toLocaleString()}
+                  </span>
+                  <span className="bundle-price">
+                    Rp {bundle.bundlePrice?.toLocaleString()}
+                  </span>
                 </div>
               </div>
             </div>
@@ -229,9 +278,30 @@ const BundleCheckout = () => {
             <div className="quantity-selector">
               <label>Jumlah Paket:</label>
               <div className="quantity-controls">
-                <button type="button" onClick={() => setCustomerData(prev => ({ ...prev, quantity: Math.max(1, prev.quantity - 1) }))} disabled={customerData.quantity <= 1}>-</button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCustomerData((prev) => ({
+                      ...prev,
+                      quantity: Math.max(1, prev.quantity - 1),
+                    }))
+                  }
+                  disabled={customerData.quantity <= 1}
+                >
+                  -
+                </button>
                 <span>{customerData.quantity}</span>
-                <button type="button" onClick={() => setCustomerData(prev => ({ ...prev, quantity: prev.quantity + 1 }))}>+</button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCustomerData((prev) => ({
+                      ...prev,
+                      quantity: prev.quantity + 1,
+                    }))
+                  }
+                >
+                  +
+                </button>
               </div>
             </div>
 
@@ -242,7 +312,10 @@ const BundleCheckout = () => {
               </div>
               <div className="total-line savings">
                 <span>Anda Hemat:</span>
-                <span>Rp {(bundle.savings * customerData.quantity)?.toLocaleString()}</span>
+                <span>
+                  Rp{" "}
+                  {(bundle.savings * customerData.quantity)?.toLocaleString()}
+                </span>
               </div>
               <div className="total-line grand-total">
                 <span>Total Pembayaran:</span>
@@ -253,18 +326,27 @@ const BundleCheckout = () => {
             <div className="qris-section">
               <h4>💰 Scan QRIS GoPay</h4>
               {!qrImageError ? (
-                <img src="/images/gopay1-qr.jpg" alt="QRIS GoPay" className="qris-image" onError={() => setQrImageError(true)} />
+                <img
+                  src="/images/gopay1-qr.jpg"
+                  alt="QRIS GoPay"
+                  className="qris-image"
+                  onError={() => setQrImageError(true)}
+                />
               ) : (
                 <div className="qris-fallback">
                   <div className="fallback-icon">💰</div>
                   <p>
-                    Transfer ke:<br />
-                    <strong>BCA: 1234 5678 9012</strong><br />
+                    Transfer ke:
+                    <br />
+                    <strong>BCA: 1234 5678 9012</strong>
+                    <br />
                     <strong>a.n UNEJ CINEMA</strong>
                   </p>
                 </div>
               )}
-              <p className="payment-amount">Amount: Rp {totalPrice?.toLocaleString()}</p>
+              <p className="payment-amount">
+                Amount: Rp {totalPrice?.toLocaleString()}
+              </p>
             </div>
           </div>
 
@@ -274,29 +356,66 @@ const BundleCheckout = () => {
             <form onSubmit={(e) => e.preventDefault()}>
               <div className="form-group">
                 <label htmlFor="name">Nama Lengkap *</label>
-                <input type="text" id="name" name="name" value={customerData.name} disabled className="disabled-input" />
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={customerData.name}
+                  disabled
+                  className="disabled-input"
+                />
               </div>
               <div className="form-group">
                 <label htmlFor="phone">Nomor Handphone *</label>
-                <input type="tel" id="phone" name="phone" value={customerData.phone} onChange={handleInputChange} required placeholder="Contoh: 081234567890" />
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={customerData.phone}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Contoh: 081234567890"
+                />
               </div>
               <div className="form-group">
                 <label htmlFor="email">Email</label>
-                <input type="email" id="email" name="email" value={customerData.email} onChange={handleInputChange} placeholder="email@example.com" />
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={customerData.email}
+                  onChange={handleInputChange}
+                  placeholder="email@example.com"
+                />
               </div>
 
               <div className="upload-section">
                 <h4>📎 Upload Bukti Pembayaran *</h4>
-                <input type="file" accept="image/*,.pdf" onChange={handleFileUpload} disabled={uploading || paymentProof} />
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleFileUpload}
+                  disabled={uploading || paymentProof}
+                />
                 {paymentProof && (
-                  <button onClick={handleConfirmPayment} className="proceed-btn" disabled={isProcessing || !customerData.phone}>
+                  <button
+                    onClick={handleConfirmPayment}
+                    className="proceed-btn"
+                    disabled={isProcessing || !customerData.phone}
+                  >
                     {isProcessing ? "Memproses..." : "Konfirmasi Pembayaran"}
                   </button>
                 )}
               </div>
 
               <div className="form-actions">
-                <button type="button" onClick={() => navigate("/bundle-ticket")} className="back-btn">Kembali</button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/bundle-ticket")}
+                  className="back-btn"
+                >
+                  Kembali
+                </button>
               </div>
             </form>
           </div>
