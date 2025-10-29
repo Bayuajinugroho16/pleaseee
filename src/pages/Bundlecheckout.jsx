@@ -101,7 +101,7 @@ const BundleCheckout = () => {
 
     try {
       // 1️⃣ CREATE ORDER
-      const resOrder = await fetch(`${API_BASE_URL}/bundle/create-order`, {
+      const resOrder = await fetch(`${API_BASE_URL}/api/bundle/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -137,7 +137,7 @@ const BundleCheckout = () => {
       const publicUrl = publicUrlData.publicUrl;
 
       // 4️⃣ UPDATE ORDER DI MYSQL
-      const resUpdate = await fetch(`${API_BASE_URL}/bundle/update-payment-proof`, {
+      const resUpdate = await fetch(`${API_BASE_URL}/api/bundle/update-payment-proof`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ order_reference: orderReference, payment_proof_url: publicUrl }),
