@@ -32,9 +32,10 @@ const AdminDatabase = () => {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Admin token not found");
 
-      const res = await fetch("https://beckendflyio.vercel.app/api/admin/all-bookings", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        "https://beckendflyio.vercel.app/api/admin/all-bookings",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       if (!res.ok) throw new Error("Failed to fetch bookings");
 
@@ -58,8 +59,9 @@ const AdminDatabase = () => {
       display_movie: b.movie_title,
       display_amount: b.total_amount,
       display_status: b.status,
-      has_payment_image: !!b.payment_proof,
+      has_payment_image: !!b.payment_url, // pakai payment_url
       display_date: b.booking_date,
+      payment_proof: b.payment_url, // assign supaya modal pakai URL
     }));
 
     const bundle = bundleOrders.map((b) => ({
@@ -70,8 +72,9 @@ const AdminDatabase = () => {
       display_movie: b.bundle_name,
       display_amount: b.total_amount || b.quantity,
       display_status: b.status,
-      has_payment_image: !!b.payment_proof,
+      has_payment_image: !!b.payment_url,
       display_date: b.booking_date || b.order_date,
+      payment_proof: b.payment_url,
     }));
 
     return [...regular, ...bundle].sort(
@@ -90,32 +93,32 @@ const AdminDatabase = () => {
     setShowPaymentModal(true);
   };
 
- const updateOrderStatus = async (order, newStatus) => {
-  try {
-    const token = localStorage.getItem("token");
-    const endpoint =
-      order.order_type === "bundle"
-        ? `https://beckendflyio.vercel.app/api/admin/bundle-orders/${order.reference}/status`
-        : `https://beckendflyio.vercel.app/api/admin/bookings/${order.reference}/status`;
+  const updateOrderStatus = async (order, newStatus) => {
+    try {
+      const token = localStorage.getItem("token");
+      const endpoint =
+        order.order_type === "bundle"
+          ? `https://beckendflyio.vercel.app/api/admin/bundle-orders/${order.reference}/status`
+          : `https://beckendflyio.vercel.app/api/admin/bookings/${order.reference}/status`;
 
-    const res = await fetch(endpoint, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ status: newStatus }),
-    });
+      const res = await fetch(endpoint, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
 
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || "Failed to update status");
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Failed to update status");
 
-    fetchAllData(); // refresh data
-  } catch (err) {
-    console.error(err);
-    alert("❌ Error updating status: " + err.message);
-  }
-};
+      fetchAllData(); // refresh data
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error updating status: " + err.message);
+    }
+  };
 
   const handleConfirmReject = async (newStatus) => {
     if (!selectedOrder) return;
@@ -124,7 +127,7 @@ const AdminDatabase = () => {
     );
     if (!confirmed) return;
 
-    await updateOrderStatus(selectedOrder.reference, newStatus, selectedOrder.order_type);
+    await updateOrderStatus(selectedOrder, newStatus);
     setShowPaymentModal(false);
   };
 
@@ -163,7 +166,9 @@ const AdminDatabase = () => {
               <td>{o.display_status}</td>
               <td>
                 {o.has_payment_image ? (
-                  <button onClick={() => viewPaymentProof(o)}>👁️ View Proof</button>
+                  <button onClick={() => viewPaymentProof(o)}>
+                    👁️ View Proof
+                  </button>
                 ) : (
                   "❌ No proof"
                 )}
@@ -171,9 +176,7 @@ const AdminDatabase = () => {
               <td>
                 <select
                   value={o.display_status}
-                  onChange={(e) =>
-                    updateOrderStatus(o, e.target.value)
-                  }
+                  onChange={(e) => updateOrderStatus(o, e.target.value)}
                 >
                   <option value="pending">Pending</option>
                   <option value="confirmed">Confirmed</option>
@@ -188,17 +191,31 @@ const AdminDatabase = () => {
 
       {/* Payment Modal */}
       {showPaymentModal && selectedOrder && (
-        <div className="modal-overlay" onClick={() => setShowPaymentModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => setShowPaymentModal(false)}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>Bukti Pembayaran - {selectedOrder.display_customer}</h3>
-            <img
-              src={selectedOrder.payment_proof}
-              alt="Payment Proof"
-              style={{ maxWidth: "100%", height: "auto" }}
-            />
+
+            {/* tampilkan gambar hanya jika ada payment_url */}
+            {selectedOrder.payment_url ? (
+              <img
+                src={selectedOrder.payment_url}
+                alt="Payment Proof"
+                style={{ maxWidth: "100%", height: "auto" }}
+              />
+            ) : (
+              <p>❌ Tidak ada bukti pembayaran</p>
+            )}
+
             <div className="modal-actions">
-              <button onClick={() => handleConfirmReject("confirmed")}>✅ Confirm</button>
-              <button onClick={() => handleConfirmReject("rejected")}>❌ Reject</button>
+              <button onClick={() => handleConfirmReject("confirmed")}>
+                ✅ Confirm
+              </button>
+              <button onClick={() => handleConfirmReject("rejected")}>
+                ❌ Reject
+              </button>
               <button onClick={() => setShowPaymentModal(false)}>Close</button>
             </div>
           </div>
