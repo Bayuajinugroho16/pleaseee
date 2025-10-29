@@ -25,7 +25,7 @@ const BundleCheckout = () => {
   const [orderStatus, setOrderStatus] = useState(null);
   const [orderData, setOrderData] = useState(null);
 
-  const API_BASE_URL = (import.meta.env.VITE_API_URL || "https://beckendflyio.vercel.app/api").replace(/\/+$/, "");
+  const API_BASE_URL = (import.meta.env.VITE_API_URL || "https://beckendflyio.vercel.app").replace(/\/+$/, "");
   const totalPrice = bundle?.bundlePrice * customerData.quantity;
 
   useEffect(() => {
