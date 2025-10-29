@@ -90,31 +90,32 @@ const AdminDatabase = () => {
     setShowPaymentModal(true);
   };
 
-  const updateOrderStatus = async (reference, newStatus, orderType) => {
-    try {
-      const token = localStorage.getItem("token");
-      let endpoint = "";
+ const updateOrderStatus = async (order, newStatus) => {
+  try {
+    const token = localStorage.getItem("token");
+    const endpoint =
+      order.order_type === "bundle"
+        ? `https://beckendflyio.vercel.app/api/admin/bundle-orders/${order.reference}/status`
+        : `https://beckendflyio.vercel.app/api/admin/bookings/${order.reference}/status`;
 
-      if (orderType === "regular") endpoint = `https://beckendflyio.vercel.app/api/admin/bookings/${reference}/status`;
-      else if (orderType === "bundle") endpoint = `https://beckendflyio.vercel.app/api/admin/bundle-orders/${reference}/status`;
+    const res = await fetch(endpoint, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status: newStatus }),
+    });
 
-      const res = await fetch(endpoint, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Failed to update status");
 
-      const result = await res.json();
-      if (result.success) fetchAllData();
-      else alert("❌ Failed: " + result.message);
-    } catch (err) {
-      console.error(err);
-      alert("❌ Error updating status");
-    }
-  };
+    fetchAllData(); // refresh data
+  } catch (err) {
+    console.error(err);
+    alert("❌ Error updating status: " + err.message);
+  }
+};
 
   const handleConfirmReject = async (newStatus) => {
     if (!selectedOrder) return;
@@ -171,7 +172,7 @@ const AdminDatabase = () => {
                 <select
                   value={o.display_status}
                   onChange={(e) =>
-                    updateOrderStatus(o.reference, e.target.value, o.order_type)
+                    updateOrderStatus(o, e.target.value)
                   }
                 >
                   <option value="pending">Pending</option>
