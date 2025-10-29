@@ -139,94 +139,82 @@ const Booking = () => {
     }
   };
 
-const handleBooking = async () => {
-  try {
-    setLoading(true);
+// HANDLE BOOKING
+  const handleBooking = async () => {
+    try {
+      setLoading(true);
 
-    // ✅ STEP 1: Refresh seat data sebelum validasi
-    console.log('🔄 Refreshing seat data before validation...');
-    await refreshSeatData();
+      // Refresh kursi sebelum validasi
+      await refreshSeatData();
 
-    // ✅ STEP 2: Validasi data customer
-    const errors = [];
-    if (!customerInfo.name?.trim()) errors.push('Nama lengkap');
-    if (!customerInfo.email?.trim()) errors.push('Email');
-    if (!customerInfo.phone?.trim()) errors.push('Nomor HP');
-    if (!movie?.title) errors.push('Film');
-    if (!showtime) errors.push('Jam tayang');
-    if (selectedSeats.length === 0) errors.push('Kursi');
+      // VALIDASI CUSTOMER & SEAT
+      const errors = [];
+      if (!customerInfo.name?.trim()) errors.push('Nama lengkap');
+      if (!customerInfo.email?.trim()) errors.push('Email');
+      if (!customerInfo.phone?.trim()) errors.push('Nomor HP');
+      if (!movie?.title) errors.push('Film');
+      if (!showtime) errors.push('Jam tayang');
+      if (selectedSeats.length === 0) errors.push('Kursi');
 
-    if (errors.length > 0) {
-      alert(`❌ Data berikut masih kosong:\n${errors.join('\n')}`);
+      if (errors.length > 0) {
+        alert(`❌ Data berikut masih kosong:\n${errors.join('\n')}`);
+        setLoading(false);
+        return;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(customerInfo.email)) {
+        alert('❌ Format email tidak valid');
+        setLoading(false);
+        return;
+      }
+
+      // CEK KURSI SUDAH DIBOOKING
+      const showtimeId = findShowtimeId(showtime);
+      const alreadyBooked = selectedSeats.filter(seat => occupiedSeats.includes(seat.trim()));
+
+      if (alreadyBooked.length > 0) {
+        alert(`❌ Kursi ${alreadyBooked.join(', ')} sudah dipesan. Silakan pilih kursi lain.`);
+        setSeatRefreshTrigger(prev => prev + 1);
+        setLoading(false);
+        return;
+      }
+
+      // POST BOOKING KE SERVER
+      const bookingPayload = {
+        showtime_id: showtimeId,
+        customer_name: customerInfo.name.trim(),
+        customer_email: customerInfo.email.trim(),
+        customer_phone: customerInfo.phone.trim(),
+        seat_numbers: selectedSeats,
+        total_amount: calculateTotalPrice(),
+        movie_title: movie.title
+      };
+
+      const response = await fetch('https://beckendflyio.vercel.app/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingPayload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert('❌ Gagal membuat booking: ' + errorData.message);
+        setLoading(false);
+        return;
+      }
+
+      const bookingResult = await response.json();
+      navigate('/payment', { state: { pendingBooking: bookingResult.data } });
+
+    } catch (error) {
+      console.error('❌ Booking error:', error);
+      alert(`❌ Gagal mempersiapkan booking: ${error.message}`);
+    } finally {
       setLoading(false);
-      return;
     }
+  };
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(customerInfo.email)) {
-      alert('❌ Format email tidak valid');
-      setLoading(false);
-      return;
-    }
-
-    // ✅ STEP 3: Validasi kursi masih tersedia
-    console.log('🎯 Validating selected seats:', selectedSeats);
-    const showtimeId = findShowtimeId(showtime);
-    const checkResponse = await fetch(
-      `https://beckendflyio.vercel.app/api/bookings/occupied-seats?showtime_id=${showtimeId}&movie_title=${encodeURIComponent(movie.title)}`
-    );
-
-    if (!checkResponse.ok) throw new Error('Gagal cek kursi yang sudah dipesan');
-    const checkData = await checkResponse.json();
-    const currentOccupiedSeats = checkData.data || [];
-    const alreadyBooked = selectedSeats.filter(seat => currentOccupiedSeats.includes(seat));
-
-    if (alreadyBooked.length > 0) {
-      alert(`❌ Kursi ${alreadyBooked.join(', ')} sudah dipesan. Silakan pilih kursi lain.`);
-      setSeatRefreshTrigger(prev => prev + 1);
-      setLoading(false);
-      return;
-    }
-
-    // ✅ STEP 4: POST booking ke server
-    const bookingPayload = {
-      showtime_id: showtimeId,
-      customer_name: customerInfo.name.trim(),
-      customer_email: customerInfo.email.trim(),
-      customer_phone: customerInfo.phone.trim(),
-      seat_numbers: selectedSeats,
-      total_amount: calculateTotalPrice(),
-      movie_title: movie.title
-    };
-
-    console.log('🚀 Sending booking to server...', bookingPayload);
-
-    const response = await fetch('https://beckendflyio.vercel.app/api/bookings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bookingPayload)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      alert('❌ Gagal membuat booking: ' + errorData.message);
-      setLoading(false);
-      return;
-    }
-
-    const bookingResult = await response.json();
-    console.log('✅ Booking created:', bookingResult.data);
-
-    // ✅ STEP 5: Redirect ke payment page dengan data booking dari server
-    navigate('/payment', { state: { pendingBooking: bookingResult.data } });
-
-  } catch (error) {
-    console.error('❌ Booking error:', error);
-    alert(`❌ Gagal mempersiapkan booking: ${error.message}`);
-  } finally {
-    setLoading(false);
-  }
-};
 
 
   const totalPrice = calculateTotalPrice();

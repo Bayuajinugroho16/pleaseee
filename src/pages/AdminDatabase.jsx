@@ -59,9 +59,9 @@ const AdminDatabase = () => {
       display_movie: b.movie_title,
       display_amount: b.total_amount,
       display_status: b.status,
-      has_payment_image: !!b.payment_url, // pakai payment_url
+      has_payment_image: !!b.payment_url, // ganti cek payment_url
+      payment_url: b.payment_url || null, // simpan url di object
       display_date: b.booking_date,
-      payment_proof: b.payment_url, // assign supaya modal pakai URL
     }));
 
     const bundle = bundleOrders.map((b) => ({
@@ -72,9 +72,9 @@ const AdminDatabase = () => {
       display_movie: b.bundle_name,
       display_amount: b.total_amount || b.quantity,
       display_status: b.status,
-      has_payment_image: !!b.payment_url,
+      has_payment_image: !!b.payment_proof,
+      payment_url: b.payment_proof || null, // bundle masih pakai payment_proof
       display_date: b.booking_date || b.order_date,
-      payment_proof: b.payment_url,
     }));
 
     return [...regular, ...bundle].sort(
