@@ -9,63 +9,7 @@ const MyTickets = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ✅ EMERGENCY: Get tickets from localStorage
-  const getEmergencyTickets = () => {
-    try {
-      // Cari dari emergency payments
-      const emergencyPayments = JSON.parse(
-        localStorage.getItem("emergency_payments") || "[]"
-      );
-      const userTickets = emergencyPayments.filter(
-        (payment) =>
-          // Jika ada username di payment data, atau ambil semua
-          !payment.username || payment.username === user?.username
-      );
-
-      console.log("🆘 EMERGENCY TICKETS:", userTickets);
-      return userTickets.map((payment) => ({
-        id: `emergency_${payment.booking_reference}`,
-        booking_reference: payment.booking_reference,
-        movie_title: payment.movie_title || "Movie (Emergency)",
-        seat_numbers: payment.seat_numbers || ["A1"],
-        total_amount: payment.total_amount || 0,
-        status: "confirmed",
-        payment_proof: payment.payment_proof || payment.payment_url,
-        payment_filename: payment.payment_filename,
-        booking_date: payment.saved_at || payment.booking_date,
-        is_emergency: true,
-      }));
-    } catch (error) {
-      console.error("❌ Emergency tickets error:", error);
-      return [];
-    }
-  };
-
-  // ✅ EMERGENCY: Create mock ticket from recent booking
-  const createMockTicketFromBooking = () => {
-    try {
-      const recentBooking = JSON.parse(
-        localStorage.getItem("recent_booking") || "null"
-      );
-      if (recentBooking) {
-        return [
-          {
-            id: `mock_${recentBooking.booking_reference}`,
-            booking_reference: recentBooking.booking_reference,
-            movie_title: recentBooking.movie_title || "Recent Movie",
-            seat_numbers: recentBooking.seat_numbers || ["A1"],
-            total_amount: recentBooking.total_amount || 0,
-            status: "confirmed",
-            booking_date: recentBooking.saved_at || new Date().toISOString(),
-            is_mock: true,
-          },
-        ];
-      }
-    } catch (error) {
-      console.error("❌ Mock ticket error:", error);
-    }
-    return [];
-  };
+  
 
   // ✅ FIXED: Fetch tickets dengan error handling yang better
   const fetchTickets = async () => {
@@ -154,42 +98,6 @@ const MyTickets = () => {
     }
   };
 
-  // ✅ Handle Recovery
-  const handleRecovery = (ticket) => {
-    try {
-      // Simpan data untuk recovery
-      localStorage.setItem("recovery_ticket", JSON.stringify(ticket));
-
-      // Buat text untuk copy
-      const recoveryText = `
-TICKET RECOVERY DATA
-Booking Reference: ${ticket.booking_reference}
-Movie: ${ticket.movie_title}
-Seats: ${ticket.seat_numbers?.join(", ")}
-Amount: Rp ${ticket.total_amount?.toLocaleString()}
-Status: ${ticket.status}
-Contact admin with this information.
-      `.trim();
-
-      // Copy ke clipboard
-      navigator.clipboard
-        .writeText(recoveryText)
-        .then(() => {
-          alert(
-            "✅ Ticket data copied to clipboard! Contact admin with this information."
-          );
-        })
-        .catch(() => {
-          alert(
-            "✅ Ticket data saved for recovery. Contact admin with booking reference: " +
-              ticket.booking_reference
-          );
-        });
-    } catch (error) {
-      console.error("❌ Recovery error:", error);
-      alert("Recovery failed: " + error.message);
-    }
-  };
 
   if (loading) {
     return (
