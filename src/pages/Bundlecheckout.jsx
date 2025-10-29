@@ -25,7 +25,6 @@ const BundleCheckout = () => {
   const [orderStatus, setOrderStatus] = useState(null);
   const [orderData, setOrderData] = useState(null);
 
-
   const API_BASE_URL = (import.meta.env.VITE_API_URL || "https://beckendflyio.vercel.app/").replace(/\/+$/, "");
   const totalPrice = bundle?.bundlePrice * customerData.quantity;
 
@@ -44,7 +43,6 @@ const BundleCheckout = () => {
     }));
   }, [user, isAuthenticated, navigate]);
 
-
   if (!bundle) {
     return (
       <div className="bundle-checkout-container">
@@ -59,6 +57,11 @@ const BundleCheckout = () => {
       </div>
     );
   }
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setCustomerData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const generateBundleReference = () => `BUNDLE-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
@@ -151,11 +154,11 @@ const BundleCheckout = () => {
     setOrderStatus(null);
     setOrderData(null);
   };
+
   return (
     <div className="bundle-checkout-container">
       <Navigation />
 
-      {/* Success Message */}
       {orderStatus === "waiting_verification" && orderData && (
         <div className="success-message">
           <div className="success-icon">🕒</div>
@@ -167,7 +170,7 @@ const BundleCheckout = () => {
           <div className="success-details">
             <p><strong>Order Reference:</strong> {orderData.order_reference}</p>
             <p><strong>Bundle:</strong> {orderData.bundle_name}</p>
-            <p><strong>Total:</strong> Rp {orderData.total_price?.toLocaleString()}</p>
+            <p><strong>Total:</strong> Rp {totalPrice?.toLocaleString()}</p>
             <p><strong>Status:</strong> <span className="status-waiting">Menunggu Verifikasi Admin</span></p>
           </div>
           <div className="success-actions">
@@ -181,7 +184,6 @@ const BundleCheckout = () => {
         </div>
       )}
 
-      {/* Failed Message */}
       {orderStatus === "failed" && (
         <div className="error-message">
           <div className="error-icon">❌</div>
@@ -191,7 +193,6 @@ const BundleCheckout = () => {
         </div>
       )}
 
-      {/* Checkout Form */}
       {(orderStatus === null || orderStatus === "failed") && (
         <div className="checkout-layout">
           <div className="order-summary">
@@ -201,20 +202,13 @@ const BundleCheckout = () => {
                 src={bundle.image}
                 alt={bundle.name}
                 className="bundle-image"
-                onError={(e) => {
-                  e.target.src =
-                    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDMwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiPkJ1bmRsZSBJbWFnZTwvdGV4dD4KPC9zdmc+";
-                }}
+                onError={(e) => { e.target.src = "/images/placeholder.png"; }}
               />
               <div className="bundle-info">
                 <h4>{bundle.name}</h4>
                 <div className="price-detail">
-                  <span className="original-price">
-                    Rp {bundle.originalPrice.toLocaleString()}
-                  </span>
-                  <span className="bundle-price">
-                    Rp {bundle.bundlePrice.toLocaleString()}
-                  </span>
+                  <span className="original-price">Rp {bundle.originalPrice?.toLocaleString()}</span>
+                  <span className="bundle-price">Rp {bundle.bundlePrice?.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -222,64 +216,42 @@ const BundleCheckout = () => {
             <div className="quantity-selector">
               <label>Jumlah Paket:</label>
               <div className="quantity-controls">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCustomerData((prev) => ({ ...prev, quantity: Math.max(1, prev.quantity - 1) }))
-                  }
-                  disabled={customerData.quantity <= 1}
-                >
-                  -
-                </button>
+                <button type="button" onClick={() => setCustomerData(prev => ({ ...prev, quantity: Math.max(1, prev.quantity - 1) }))} disabled={customerData.quantity <= 1}>-</button>
                 <span>{customerData.quantity}</span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCustomerData((prev) => ({ ...prev, quantity: prev.quantity + 1 }))
-                  }
-                >
-                  +
-                </button>
+                <button type="button" onClick={() => setCustomerData(prev => ({ ...prev, quantity: prev.quantity + 1 }))}>+</button>
               </div>
             </div>
 
             <div className="order-total">
               <div className="total-line">
                 <span>Subtotal:</span>
-                <span>Rp {totalPrice.toLocaleString()}</span>
+                <span>Rp {totalPrice?.toLocaleString()}</span>
               </div>
               <div className="total-line savings">
                 <span>Anda Hemat:</span>
-                <span>Rp {(bundle.savings * customerData.quantity).toLocaleString()}</span>
+                <span>Rp {(bundle.savings * customerData.quantity)?.toLocaleString()}</span>
               </div>
               <div className="total-line grand-total">
                 <span>Total Pembayaran:</span>
-                <span>Rp {totalPrice.toLocaleString()}</span>
+                <span>Rp {totalPrice?.toLocaleString()}</span>
               </div>
             </div>
 
             <div className="qris-section">
               <h4>💰 Scan QRIS GoPay</h4>
               {!qrImageError ? (
-                <img
-                  src="/images/gopay1-qr.jpg"
-                  alt="QRIS GoPay"
-                  className="qris-image"
-                  onError={() => setQrImageError(true)}
-                />
+                <img src="/images/gopay1-qr.jpg" alt="QRIS GoPay" className="qris-image" onError={() => setQrImageError(true)} />
               ) : (
                 <div className="qris-fallback">
                   <div className="fallback-icon">💰</div>
                   <p>
-                    Transfer ke:
-                    <br />
-                    <strong>BCA: 1234 5678 9012</strong>
-                    <br />
+                    Transfer ke:<br />
+                    <strong>BCA: 1234 5678 9012</strong><br />
                     <strong>a.n UNEJ CINEMA</strong>
                   </p>
                 </div>
               )}
-              <p className="payment-amount">Amount: Rp {totalPrice.toLocaleString()}</p>
+              <p className="payment-amount">Amount: Rp {totalPrice?.toLocaleString()}</p>
             </div>
           </div>
 
@@ -288,67 +260,29 @@ const BundleCheckout = () => {
             <form onSubmit={(e) => e.preventDefault()}>
               <div className="form-group">
                 <label htmlFor="name">Nama Lengkap *</label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={customerData.name}
-                  onChange={handleInputChange}
-                  required
-                  disabled
-                  className="disabled-input"
-                />
+                <input type="text" id="name" name="name" value={customerData.name} disabled className="disabled-input" />
               </div>
-
               <div className="form-group">
                 <label htmlFor="phone">Nomor Handphone *</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={customerData.phone}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Contoh: 081234567890"
-                />
+                <input type="tel" id="phone" name="phone" value={customerData.phone} onChange={handleInputChange} required placeholder="Contoh: 081234567890" />
               </div>
-
               <div className="form-group">
                 <label htmlFor="email">Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={customerData.email}
-                  onChange={handleInputChange}
-                  placeholder="email@example.com"
-                />
+                <input type="email" id="email" name="email" value={customerData.email} onChange={handleInputChange} placeholder="email@example.com" />
               </div>
 
               <div className="upload-section">
                 <h4>📎 Upload Bukti Pembayaran *</h4>
-                <input
-                  type="file"
-                  id="payment-proof"
-                  accept="image/*,.pdf"
-                  onChange={handleFileUpload}
-                  disabled={uploading || paymentProof}
-                />
+                <input type="file" accept="image/*,.pdf" onChange={handleFileUpload} disabled={uploading || paymentProof} />
                 {paymentProof && (
-                  <button
-                    onClick={handleConfirmPayment}
-                    className="proceed-btn"
-                    disabled={isProcessing || !customerData.phone}
-                  >
+                  <button onClick={handleConfirmPayment} className="proceed-btn" disabled={isProcessing || !customerData.phone}>
                     {isProcessing ? "Memproses..." : "Konfirmasi Pembayaran"}
                   </button>
                 )}
               </div>
 
               <div className="form-actions">
-                <button type="button" onClick={() => navigate("/bundle-ticket")} className="back-btn">
-                  Kembali
-                </button>
+                <button type="button" onClick={() => navigate("/bundle-ticket")} className="back-btn">Kembali</button>
               </div>
             </form>
           </div>
