@@ -100,7 +100,7 @@ const fetchAllData = async () => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `https://beckendflyio.vercel.app/api/admin/orders/${reference}/status`,
+        `https://beckendflyio.vercel.app/api/admin/booking/${reference}/status`,
         {
           method: "PUT",
           headers: {
