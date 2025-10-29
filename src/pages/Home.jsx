@@ -27,7 +27,7 @@ const Home = () => {
       detailLink: "/Moviedetail",
       hari: "Sabtu",
       tanggal: "06 November 2025",
-      jam: "19:00 WIB"
+      jam: "18:00 WIB"
 
     },
     {
@@ -38,8 +38,8 @@ const Home = () => {
       poster: "/film/layar2.png",
       showtimes: ["11:00",],
       detailLink: "/Moviedetail2", 
-      tanggal: "07 November 2025",
-      jam: "13:30 WIB"
+      tanggal: "06 November 2025",
+      jam: "20:30 WIB"
     },
     {
       id: 3,
@@ -49,7 +49,7 @@ const Home = () => {
       showtimes: ["12:00", "15:30", "19:00"],
        detailLink: "/Moviedetail3",
       tanggal: "07 November 2025",
-      jam: "16:00 WIB"
+      jam: "13:30 WIB"
     },
     {
       id: 4,
@@ -58,8 +58,8 @@ const Home = () => {
       poster: "/film/layar4.png",
       showtimes: ["13:00", "16:30", "20:00"],
        detailLink: "/Moviedetail4",
-       tanggal: "08 November 2025",
-      jam: "15:00 WIB" 
+       tanggal: "07 November 2025",
+      jam: "16:00 WIB" 
     }
     
   ];
