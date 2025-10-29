@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // ✅ IMPORT AUTH CONTEXT
-import SeatSelector from '../components/SeatSelector';
-import Navigation from '../components/Navigation';
-import './Booking.css';
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; // ✅ IMPORT AUTH CONTEXT
+import SeatSelector from "../components/SeatSelector";
+import Navigation from "../components/Navigation";
+import "./Booking.css";
 
 const Booking = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth(); // ✅ GUNAKAN AUTH CONTEXT
-  
+
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [customerInfo, setCustomerInfo] = useState({
-    name: '',
-    email: '',
-    phone: ''
+    name: "",
+    email: "",
+    phone: "",
   });
   const [loading, setLoading] = useState(false);
   const [seatRefreshTrigger, setSeatRefreshTrigger] = useState(0);
@@ -23,25 +23,24 @@ const Booking = () => {
 
   // ✅ EFFECT UNTUK AUTO-FILL DATA DARI USER LOGIN
   useEffect(() => {
-    console.log('🔍 Checking authentication for booking...');
-    console.log('User from AuthContext:', user);
-    console.log('Is Authenticated:', isAuthenticated);
+    console.log("🔍 Checking authentication for booking...");
+    console.log("User from AuthContext:", user);
+    console.log("Is Authenticated:", isAuthenticated);
 
     if (!isAuthenticated || !user) {
-      console.log('❌ User not authenticated, redirecting to login...');
-      alert('⚠️ Anda harus login terlebih dahulu untuk melakukan booking');
-      navigate('/login');
+      console.log("❌ User not authenticated, redirecting to login...");
+      alert("⚠️ Anda harus login terlebih dahulu untuk melakukan booking");
+      navigate("/login");
       return;
     }
 
     // ✅ AUTO-FILL DATA CUSTOMER DARI USER YANG LOGIN
-    console.log('✅ User authenticated, auto-filling customer data...');
+    console.log("✅ User authenticated, auto-filling customer data...");
     setCustomerInfo({
-      name: user.username || user.name || '', // ✅ GUNAKAN USERNAME DARI LOGIN
-      email: user.email || '',
-      phone: user.phone || ''
+      name: user.username || user.name || "", // ✅ GUNAKAN USERNAME DARI LOGIN
+      email: user.email || "",
+      phone: user.phone || "",
     });
-
   }, [user, isAuthenticated, navigate]);
 
   // ✅ Function untuk menghitung total harga
@@ -53,18 +52,20 @@ const Booking = () => {
   // ✅ Function untuk menentukan showtime_id berdasarkan showtime string
   const findShowtimeId = (showtime) => {
     const showtimeMap = {
-      '10:00': 1,
-      '13:00': 2, 
-      '16:00': 3,
-      '19:00': 4,
-      '21:30': 5,
-      '18:00': 1,
-      '20:30': 2,
-      '21:00': 3
+      "10:00": 1,
+      "13:00": 2,
+      "16:00": 3,
+      "19:00": 4,
+      "21:30": 5,
+      "18:00": 1,
+      "20:30": 2,
+      "21:00": 3,
     };
-    
+
     const showtimeId = showtimeMap[showtime] || 1;
-    console.log(`🎯 Mapping showtime: "${showtime}" → showtime_id: ${showtimeId}`);
+    console.log(
+      `🎯 Mapping showtime: "${showtime}" → showtime_id: ${showtimeId}`
+    );
     return showtimeId;
   };
 
@@ -76,10 +77,7 @@ const Booking = () => {
           <div className="no-movie-selected">
             <h2>No movie selected</h2>
             <p>Please select a movie first to proceed with booking</p>
-            <button 
-              onClick={() => navigate('/home')}
-              className="back-home-btn"
-            >
+            <button onClick={() => navigate("/home")} className="back-home-btn">
               Back to Home
             </button>
           </div>
@@ -109,12 +107,12 @@ const Booking = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     // ✅ HANYA ALLOW EMAIL DAN PHONE UNTUK DIUBAH, NAME TIDAK BISA DIUBAH
-    if (name !== 'name') {
-      setCustomerInfo(prev => ({
+    if (name !== "name") {
+      setCustomerInfo((prev) => ({
         ...prev,
-        [name]: value
+        [name]: value,
       }));
     }
   };
@@ -122,24 +120,26 @@ const Booking = () => {
   // ✅ FUNCTION UNTUK REFRESH DATA KURSI
   const refreshSeatData = async () => {
     try {
-      console.log('🔄 Manually refreshing seat data...');
+      console.log("🔄 Manually refreshing seat data...");
       const showtimeId = findShowtimeId(showtime);
       const response = await fetch(
-        `https://beckendflyio.vercel.app/api/bookings/occupied-seats?showtime_id=${showtimeId}&movie_title=${encodeURIComponent(movie.title)}&refresh=${Date.now()}`
+        `https://backendflyio.vercel.app/api/bookings/occupied-seats?showtime_id=${showtimeId}&movie_title=${encodeURIComponent(
+          movie.title
+        )}&refresh=${Date.now()}`
       );
-      
+
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Refreshed occupied seats:', data.data);
+        console.log("✅ Refreshed occupied seats:", data.data);
         // Trigger SeatSelector untuk refresh
-        setSeatRefreshTrigger(prev => prev + 1);
+        setSeatRefreshTrigger((prev) => prev + 1);
       }
     } catch (error) {
-      console.error('❌ Error refreshing seat data:', error);
+      console.error("❌ Error refreshing seat data:", error);
     }
   };
 
-// HANDLE BOOKING
+  // HANDLE BOOKING
   const handleBooking = async () => {
     try {
       setLoading(true);
@@ -149,33 +149,39 @@ const Booking = () => {
 
       // VALIDASI CUSTOMER & SEAT
       const errors = [];
-      if (!customerInfo.name?.trim()) errors.push('Nama lengkap');
-      if (!customerInfo.email?.trim()) errors.push('Email');
-      if (!customerInfo.phone?.trim()) errors.push('Nomor HP');
-      if (!movie?.title) errors.push('Film');
-      if (!showtime) errors.push('Jam tayang');
-      if (selectedSeats.length === 0) errors.push('Kursi');
+      if (!customerInfo.name?.trim()) errors.push("Nama lengkap");
+      if (!customerInfo.email?.trim()) errors.push("Email");
+      if (!customerInfo.phone?.trim()) errors.push("Nomor HP");
+      if (!movie?.title) errors.push("Film");
+      if (!showtime) errors.push("Jam tayang");
+      if (selectedSeats.length === 0) errors.push("Kursi");
 
       if (errors.length > 0) {
-        alert(`❌ Data berikut masih kosong:\n${errors.join('\n')}`);
+        alert(`❌ Data berikut masih kosong:\n${errors.join("\n")}`);
         setLoading(false);
         return;
       }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(customerInfo.email)) {
-        alert('❌ Format email tidak valid');
+        alert("❌ Format email tidak valid");
         setLoading(false);
         return;
       }
 
       // CEK KURSI SUDAH DIBOOKING
       const showtimeId = findShowtimeId(showtime);
-      const alreadyBooked = selectedSeats.filter(seat => occupiedSeats.includes(seat.trim()));
+      const alreadyBooked = selectedSeats.filter((seat) =>
+        occupiedSeats.includes(seat.trim())
+      );
 
       if (alreadyBooked.length > 0) {
-        alert(`❌ Kursi ${alreadyBooked.join(', ')} sudah dipesan. Silakan pilih kursi lain.`);
-        setSeatRefreshTrigger(prev => prev + 1);
+        alert(
+          `❌ Kursi ${alreadyBooked.join(
+            ", "
+          )} sudah dipesan. Silakan pilih kursi lain.`
+        );
+        setSeatRefreshTrigger((prev) => prev + 1);
         setLoading(false);
         return;
       }
@@ -188,49 +194,49 @@ const Booking = () => {
         customer_phone: customerInfo.phone.trim(),
         seat_numbers: selectedSeats,
         total_amount: calculateTotalPrice(),
-        movie_title: movie.title
+        movie_title: movie.title,
       };
 
-      const response = await fetch('https://beckendflyio.vercel.app/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingPayload)
-      });
+      const response = await fetch(
+        "https://beckendflyio.vercel.app/api/bookings",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bookingPayload),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        alert('❌ Gagal membuat booking: ' + errorData.message);
+        alert("❌ Gagal membuat booking: " + errorData.message);
         setLoading(false);
         return;
       }
 
       const bookingResult = await response.json();
-      navigate('/payment', { state: { pendingBooking: bookingResult.data } });
-
+      navigate("/payment", { state: { pendingBooking: bookingResult.data } });
     } catch (error) {
-      console.error('❌ Booking error:', error);
+      console.error("❌ Booking error:", error);
       alert(`❌ Gagal mempersiapkan booking: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-
-
   const totalPrice = calculateTotalPrice();
 
   return (
     <div className="booking-container">
       <Navigation />
-      
+
       <div className="page-content">
         <div className="booking-content">
           <h1 className="booking-title">Book Your Tickets</h1>
-          
+
           {/* User Info */}
           <div className="user-login-info">
             <p>
-              <strong>Anda login sebagai:</strong> {user.username} 
+              <strong>Anda login sebagai:</strong> {user.username}
             </p>
             <p className="name-auto-info">
               ✅ <strong>Nama telah diisi otomatis sesuai akun login</strong>
@@ -263,7 +269,7 @@ const Booking = () => {
             {/* Seat Selection */}
             <div className="seat-selection-section">
               <h3>Select Seats</h3>
-              <SeatSelector 
+              <SeatSelector
                 onSeatsChange={handleSeatsChange}
                 showtimeId={findShowtimeId(showtime)}
                 movieTitle={movie.title}
@@ -276,7 +282,7 @@ const Booking = () => {
               <h3>Your Information</h3>
               <div className="customer-form">
                 <h3>Data Pemesan</h3>
-                
+
                 {/* ✅ NAMA AUTO-FILL DAN DISABLED */}
                 <div className="form-group">
                   <label htmlFor="name">Nama Lengkap *</label>
@@ -292,7 +298,8 @@ const Booking = () => {
                     required
                   />
                   <div className="field-info">
-                    ✅ Nama diambil otomatis dari username login: <strong>{user.username}</strong>
+                    ✅ Nama diambil otomatis dari username login:{" "}
+                    <strong>{user.username}</strong>
                   </div>
                 </div>
 
@@ -339,7 +346,9 @@ const Booking = () => {
                   </div>
                   <div className="summary-row">
                     <span>Selected Seats:</span>
-                    <span className="seats-list">{selectedSeats.join(', ') || '-'}</span>
+                    <span className="seats-list">
+                      {selectedSeats.join(", ") || "-"}
+                    </span>
                   </div>
                   <div className="summary-row">
                     <span>Number of Seats:</span>
@@ -350,13 +359,18 @@ const Booking = () => {
                     <span>Rp {totalPrice.toLocaleString()}</span>
                   </div>
                 </div>
-                
-                <button 
+
+                <button
                   onClick={handleBooking}
-                  disabled={loading || selectedSeats.length === 0 || !customerInfo.email || !customerInfo.phone}
+                  disabled={
+                    loading ||
+                    selectedSeats.length === 0 ||
+                    !customerInfo.email ||
+                    !customerInfo.phone
+                  }
                   className="confirm-booking-btn"
                 >
-                  {loading ? 'Processing...' : `Continue to Payment`}
+                  {loading ? "Processing..." : `Continue to Payment`}
                 </button>
 
                 {/* <div className="debug-info">
