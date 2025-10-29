@@ -1,3 +1,4 @@
+// src/pages/BundleCheckout.jsx
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -24,6 +25,7 @@ const BundleCheckout = () => {
   const [orderStatus, setOrderStatus] = useState(null);
   const [orderData, setOrderData] = useState(null);
 
+  const API_BASE_URL = (import.meta.env.VITE_API_URL || "https://beckendflyio.vercel.app/api").replace(/\/+$/, "");
   const totalPrice = bundle?.bundlePrice * customerData.quantity;
 
   useEffect(() => {
@@ -70,93 +72,92 @@ const BundleCheckout = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name !== "name") {
-      setCustomerData((prev) => ({ ...prev, [name]: value }));
-    }
+    setCustomerData((prev) => ({ ...prev, [name]: value }));
   };
 
   const generateBundleReference = () => `BUNDLE-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-const handleFileUpload = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const validTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
-  if (!validTypes.includes(file.type)) {
-    alert("Hanya file JPG, PNG, atau PDF yang diizinkan");
-    return;
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    alert("Ukuran file maksimal 5MB");
-    return;
-  }
+    const validTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
+    if (!validTypes.includes(file.type)) {
+      return alert("Hanya file JPG, PNG, atau PDF yang diizinkan");
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return alert("Ukuran file maksimal 5MB");
+    }
 
-  setPaymentProof(file);
-};
+    setPaymentProof(file);
+  };
+
   const handleConfirmPayment = async () => {
-  if (!paymentProof) return alert("Upload bukti pembayaran terlebih dahulu");
-  if (!customerData.phone) return alert("Nomor HP wajib diisi");
+    if (!paymentProof) return alert("Upload bukti pembayaran terlebih dahulu");
+    if (!customerData.phone) return alert("Nomor HP wajib diisi");
 
-  setIsProcessing(true);
-  const orderReference = generateBundleReference();
+    setIsProcessing(true);
+    const orderReference = generateBundleReference();
 
-  try {
-    // 1️⃣ CREATE ORDER DI MYSQL
-    const resOrder = await fetch(`${import.meta.env.VITE_API_URL}/bundle/create-order`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        order_reference: orderReference,
-        bundle_id: bundle.id,
-        bundle_name: bundle.name,
-        customer_name: customerData.name,
-        customer_phone: customerData.phone,
-        customer_email: customerData.email,
-        quantity: customerData.quantity,
-        total_price: totalPrice,
-        status: "pending",
-      }),
-    });
-    const orderResult = await resOrder.json();
-    if (!orderResult.success) throw new Error(orderResult.message);
+    try {
+      // 1️⃣ CREATE ORDER
+      const resOrder = await fetch(`${API_BASE_URL}/bundle/create-order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_reference: orderReference,
+          bundle_id: bundle.id,
+          bundle_name: bundle.name,
+          customer_name: customerData.name,
+          customer_phone: customerData.phone,
+          customer_email: customerData.email,
+          quantity: customerData.quantity,
+          total_price: totalPrice,
+          status: "pending",
+        }),
+      });
 
-    // 2️⃣ UPLOAD FILE KE SUPABASE (bucket bukti_pembayaran)
-    setUploading(true);
-    const ext = paymentProof.name.split(".").pop();
-    const filePath = `bundle-payments/${orderReference}.${ext}`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("bukti_pembayaran")
-      .upload(filePath, paymentProof, { upsert: true });
-    if (uploadError) throw uploadError;
+      if (!resOrder.ok) throw new Error("Gagal membuat order");
+      const orderResult = await resOrder.json();
+      if (!orderResult.success) throw new Error(orderResult.message);
 
-    // 3️⃣ DAPATKAN PUBLIC URL
-    const { data: publicUrlData } = supabase.storage
-      .from("bukti_pembayaran")
-      .getPublicUrl(filePath);
-    const publicUrl = publicUrlData.publicUrl;
+      // 2️⃣ UPLOAD FILE KE SUPABASE
+      setUploading(true);
+      const ext = paymentProof.name.split(".").pop();
+      const filePath = `bundle-payments/${orderReference}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("bukti_pembayaran")
+        .upload(filePath, paymentProof, { upsert: true });
+      if (uploadError) throw uploadError;
 
-    // 4️⃣ UPDATE ORDER DI MYSQL DENGAN URL FILE
-    const baseURL = import.meta.env.VITE_API_URL.replace(/\/+$/, '');
-    const resUpdate = await fetch(`${baseURL  }/bundle/update-payment-proof`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ order_reference: orderReference, payment_proof_url: publicUrl }),
-    });
-    const updateResult = await resUpdate.json();
-    if (!updateResult.success) throw new Error(updateResult.message);
+      // 3️⃣ DAPATKAN PUBLIC URL
+      const { data: publicUrlData } = supabase.storage
+        .from("bukti_pembayaran")
+        .getPublicUrl(filePath);
+      const publicUrl = publicUrlData.publicUrl;
 
-    setOrderData({ ...orderResult.data, payment_proof_url: publicUrl });
-    setOrderStatus("waiting_verification");
-    alert("✅ Bukti pembayaran berhasil diunggah. Tunggu verifikasi admin.");
-  } catch (err) {
-    console.error("❌ Error saat konfirmasi pembayaran:", err);
-    setOrderStatus("failed");
-    alert("Gagal konfirmasi pembayaran: " + err.message);
-  } finally {
-    setIsProcessing(false);
-    setUploading(false);
-  }
-};
+      // 4️⃣ UPDATE ORDER DI MYSQL
+      const resUpdate = await fetch(`${API_BASE_URL}/bundle/update-payment-proof`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_reference: orderReference, payment_proof_url: publicUrl }),
+      });
+      if (!resUpdate.ok) throw new Error("Gagal update payment proof");
+      const updateResult = await resUpdate.json();
+      if (!updateResult.success) throw new Error(updateResult.message);
+
+      setOrderData({ ...orderResult.data, payment_proof_url: publicUrl });
+      setOrderStatus("waiting_verification");
+      alert("✅ Bukti pembayaran berhasil diunggah. Tunggu verifikasi admin.");
+    } catch (err) {
+      console.error("❌ Error saat konfirmasi pembayaran:", err);
+      setOrderStatus("failed");
+      alert("Gagal konfirmasi pembayaran: " + err.message);
+    } finally {
+      setIsProcessing(false);
+      setUploading(false);
+    }
+  };
 
   const handleNewOrder = () => {
     setCustomerData((prev) => ({
@@ -174,6 +175,7 @@ const handleFileUpload = (e) => {
     <div className="bundle-checkout-container">
       <Navigation />
 
+      {/* Success Message */}
       {orderStatus === "waiting_verification" && orderData && (
         <div className="success-message">
           <div className="success-icon">🕒</div>
@@ -183,19 +185,10 @@ const handleFileUpload = (e) => {
             pembayaran dalam waktu maksimal <strong>10 menit</strong>.
           </p>
           <div className="success-details">
-            <p>
-              <strong>Order Reference:</strong> {orderData.order_reference}
-            </p>
-            <p>
-              <strong>Bundle:</strong> {orderData.bundle_name}
-            </p>
-            <p>
-              <strong>Total:</strong> Rp {orderData.total_price?.toLocaleString()}
-            </p>
-            <p>
-              <strong>Status:</strong>{" "}
-              <span className="status-waiting">Menunggu Verifikasi Admin</span>
-            </p>
+            <p><strong>Order Reference:</strong> {orderData.order_reference}</p>
+            <p><strong>Bundle:</strong> {orderData.bundle_name}</p>
+            <p><strong>Total:</strong> Rp {orderData.total_price?.toLocaleString()}</p>
+            <p><strong>Status:</strong> <span className="status-waiting">Menunggu Verifikasi Admin</span></p>
           </div>
           <div className="success-actions">
             <button onClick={() => navigate("/my-tickets")} className="view-tickets-btn">
@@ -208,17 +201,17 @@ const handleFileUpload = (e) => {
         </div>
       )}
 
+      {/* Failed Message */}
       {orderStatus === "failed" && (
         <div className="error-message">
           <div className="error-icon">❌</div>
           <h2>Pembayaran Gagal</h2>
           <p>Silakan coba lagi atau hubungi customer service</p>
-          <button onClick={handleNewOrder} className="retry-btn">
-            Coba Lagi
-          </button>
+          <button onClick={handleNewOrder} className="retry-btn">Coba Lagi</button>
         </div>
       )}
 
+      {/* Checkout Form */}
       {(orderStatus === null || orderStatus === "failed") && (
         <div className="checkout-layout">
           <div className="order-summary">
@@ -252,10 +245,7 @@ const handleFileUpload = (e) => {
                 <button
                   type="button"
                   onClick={() =>
-                    setCustomerData((prev) => ({
-                      ...prev,
-                      quantity: Math.max(1, prev.quantity - 1),
-                    }))
+                    setCustomerData((prev) => ({ ...prev, quantity: Math.max(1, prev.quantity - 1) }))
                   }
                   disabled={customerData.quantity <= 1}
                 >
@@ -265,10 +255,7 @@ const handleFileUpload = (e) => {
                 <button
                   type="button"
                   onClick={() =>
-                    setCustomerData((prev) => ({
-                      ...prev,
-                      quantity: prev.quantity + 1,
-                    }))
+                    setCustomerData((prev) => ({ ...prev, quantity: prev.quantity + 1 }))
                   }
                 >
                   +
