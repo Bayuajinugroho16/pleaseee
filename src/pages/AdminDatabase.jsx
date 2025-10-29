@@ -72,17 +72,21 @@ const AdminDatabase = () => {
   }));
 
   const bundle = bundleOrders.map((b) => ({
-    ...b,
-    order_type: "bundle",
-    reference: b.order_reference,
-    display_customer: b.customer_name,
-    display_movie: b.bundle_name,
-    display_amount: Number(b.total_amount || b.quantity) || 0,
-    display_status: b.status,
-    has_payment_image: !!b.payment_proof,
-    payment_url: b.payment_proof || null,
-    display_date: b.booking_date ? new Date(b.booking_date) : b.order_date ? new Date(b.order_date) : new Date(0),
-  }));
+  ...b,
+  order_type: "bundle",
+  reference: b.order_reference,
+  display_customer: b.customer_name,
+  display_movie: b.bundle_name,
+  display_amount: Number(b.total_price) || 0, // total price langsung dari server
+  display_status: b.status,
+  has_payment_image: !!b.payment_proof,
+  payment_url: b.payment_proof || null,
+  display_date: b.booking_date
+    ? new Date(b.booking_date)
+    : b.order_date
+    ? new Date(b.order_date)
+    : new Date(0),
+}));
 
   // gabungkan dan urutkan dari terbaru
   return [...regular, ...bundle].sort((a, b) => b.display_date - a.display_date);
