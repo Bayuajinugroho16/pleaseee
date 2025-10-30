@@ -323,7 +323,7 @@ const BundleCheckout = () => {
             </div>
 
             <div className="qris-section">
-              <h4>💰 Scan QRIS GoPay</h4>
+              <h4> QRIS </h4>
               {!qrImageError ? (
                 <img
                   src="/images/gopay1-qr.jpg"
