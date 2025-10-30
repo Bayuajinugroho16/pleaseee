@@ -72,6 +72,7 @@ const Home = () => {
         {/* Hero Section */}
         <div className="hero-section">
           <h1> UNEJ FILM FESTIVAL </h1>
+          <p>  Powered by Wardah  </p>
           <p>Amankan Tiketmu Sekarang !! </p>
         </div>
 

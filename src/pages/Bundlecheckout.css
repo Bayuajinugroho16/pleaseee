@@ -1,12 +1,17 @@
+/* ================= Bundlecheckout.css ================= */
+
+/* General Container */
 .bundle-checkout-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .checkout-content {
-  padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  padding: 0 15px;
 }
 
 .checkout-header {
@@ -26,6 +31,7 @@
   opacity: 0.9;
 }
 
+/* Layout Grid */
 .checkout-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -56,10 +62,11 @@
 }
 
 .bundle-image {
-  width: 362px;
+  width: 100%;
+  max-width: 362px;
   height: 280px;
   object-fit: cover;
-  border-radius: 0px;
+  border-radius: 8px;
 }
 
 .bundle-info h4 {
@@ -213,6 +220,7 @@
   border-color: #e74c3c;
 }
 
+/* Buttons */
 .form-actions {
   display: flex;
   gap: 15px;
@@ -269,24 +277,6 @@
 .error-message h2 {
   margin-bottom: 20px;
 }
-
-/* Responsive */
-@media (max-width: 768px) {
-  .checkout-layout {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  
-  .bundle-detail {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
-}
-
 
 /* Payment Instructions */
 .payment-instructions {
@@ -427,22 +417,7 @@
   opacity: 0.8;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .upload-success {
-    flex-direction: column;
-    text-align: center;
-    gap: 10px;
-  }
-  
-  .payment-instructions {
-    margin-top: 15px;
-  }
-}
-
-/* Bundlecheckout.css - PERBAIKI SUCCESS MESSAGE */
-
-/* Success Message Styles - IMPROVED */
+/* Success Message */
 .success-message {
   background: linear-gradient(135deg, #ffffff 0%, #f8fff9 100%);
   border-radius: 20px;
@@ -459,10 +434,7 @@
 .success-message::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 5px;
+  top: 0; left: 0; right: 0; height: 5px;
   background: linear-gradient(90deg, #28a745, #20c997, #28a745);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
@@ -470,7 +442,7 @@
 
 @keyframes shimmer {
   0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+   100% { background-position: 200% 0; }
 }
 
 .success-icon {
@@ -480,15 +452,9 @@
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-10px);
-  }
-  60% {
-    transform: translateY(-5px);
-  }
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  60% { transform: translateY(-5px); }
 }
 
 .success-message h2 {
@@ -505,372 +471,149 @@
   line-height: 1.5;
 }
 
-/* Success Details - IMPROVED */
-.success-details {
-  background: #ffffff;
-  padding: 1.5rem;
+/* ================= Success Payment Section ================= */
+.success-message {
+  background: #e6ffed;
+  border: 1px solid #28a745;
   border-radius: 12px;
-  margin-bottom: 2rem;
-  text-align: left;
-  border: 2px solid #e8f5e8;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  padding: 2rem;
+  margin: 2rem auto;
+  max-width: 800px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-.success-detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem 0;
-  border-bottom: 1px solid #f1f3f4;
-}
-
-.success-detail-item:last-child {
-  border-bottom: none;
-}
-
-.detail-label {
-  font-weight: 600;
-  color: #495057;
-  font-size: 0.95rem;
-}
-
-.detail-value {
-  color: #212529;
-  font-weight: 500;
-  text-align: right;
-}
-
-.detail-value.ref {
-  font-family: 'Courier New', monospace;
-  background: #f8f9fa;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.detail-value.code {
-  color: #e74c3c;
-  font-weight: bold;
-  font-size: 1.1rem;
-  background: #fff5f5;
-  padding: 4px 12px;
-  border-radius: 6px;
-  border: 1px dashed #e74c3c;
-}
-
-.status-confirmed {
-  color: #28a745;
-  font-weight: bold;
-  background: #e1f5e1;
-  padding: 0.3rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  border: 1px solid #a3d9a5;
-}
-
-/* Success Actions - IMPROVED */
-.success-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.view-tickets-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 14px 28px;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  min-width: 160px;
-}
-
-.view-tickets-btn:hover {
-  background: linear-gradient(135deg, #5a6fd8 0%, #6b46c1 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-.new-order-btn {
-  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-  color: white;
-  border: none;
-  padding: 14px 28px;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  min-width: 160px;
-}
-
-.new-order-btn:hover {
-  background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
-}
-
-/* Debug Section - IMPROVED */
-.debug-section {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e9ecef;
-}
-
-.debug-actions {
+.success-icon {
+  font-size: 48px;
   margin-bottom: 1rem;
 }
 
-.debug-btn {
-  background: #ffc107;
-  color: #212529;
+.success-message h2 {
+  color: #155724;
+  margin-bottom: 1rem;
+  font-size: 1.8rem;
+}
+
+.success-message p {
+  color: #155724;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.success-details {
+  background: #f8fff9;
+  border: 1px solid #c3e6cb;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.success-details p {
+  margin: 5px 0;
+  font-size: 0.95rem;
+}
+
+.status-waiting {
+  font-weight: bold;
+  color: #155724;
+}
+
+.success-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.view-tickets-btn,
+.new-order-btn {
+  padding: 10px 20px;
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  border-radius: 8px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.debug-btn:hover {
-  background: #e0a800;
-  transform: translateY(-1px);
-}
-
-.debug-info {
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-  overflow: hidden;
-}
-
-.debug-info summary {
-  cursor: pointer;
-  font-weight: 600;
-  color: #6c757d;
-  padding: 12px 16px;
-  background: #e9ecef;
-  transition: background 0.3s ease;
-}
-
-.debug-info summary:hover {
-  background: #dee2e6;
-}
-
-.debug-info pre {
-  background: white;
-  padding: 1rem;
-  margin: 0;
-  overflow-x: auto;
-  font-size: 0.8rem;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-/* Additional Success Elements */
-.success-badge {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: #28a745;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-.success-timer {
-  color: #6c757d;
-  font-size: 0.9rem;
-  margin-top: 1rem;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .success-message {
-    margin: 1rem;
-    padding: 2rem 1rem;
-  }
-  
-  .success-actions {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .view-tickets-btn,
-  .new-order-btn {
-    width: 100%;
-    max-width: 280px;
-  }
-  
-  .success-detail-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.3rem;
-  }
-  
-  .detail-value {
-    text-align: left;
-  }
-}
-
-/* Print Styles for Ticket */
-@media print {
-  .success-message {
-    box-shadow: none;
-    border: 2px solid #000;
-    margin: 0;
-  }
-  
-  .success-actions,
-  .debug-section {
-    display: none;
-  }
-}
-
 .view-tickets-btn {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: #667eea;
   color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.new-order-btn {
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .view-tickets-btn:hover {
-  background: linear-gradient(135deg, #5a6fd8, #6b46c1);
+  background: #5a6fd8;
+}
+
+.new-order-btn {
+  background: #28a745;
+  color: white;
 }
 
 .new-order-btn:hover {
-  background: #5a6268;
+  background: #218838;
 }
 
-/* Debug Info */
-.debug-info {
-  margin-top: 2rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.debug-info summary {
-  cursor: pointer;
-  font-weight: 600;
-  color: #6c757d;
-}
-
-.debug-info pre {
-  background: white;
-  padding: 1rem;
-  border-radius: 4px;
-  overflow-x: auto;
-  font-size: 0.8rem;
-  margin-top: 1rem;
-}
-
-/* Bundlecheckout.css - Additional Styles */
-
-.user-login-info {
-  background: #e8f5e8;
-  border: 1px solid #4caf50;
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin: 10px 0;
-}
-
-.user-login-info p {
-  margin: 5px 0;
-  font-size: 14px;
-}
-
-.name-auto-info {
-  color: #2e7d32;
-  font-size: 13px !important;
-}
-
-.disabled-input {
-  background-color: #f5f5f5 !important;
-  color: #666 !important;
-  cursor: not-allowed !important;
-  border-color: #ddd !important;
-}
-
-.field-info {
-  color: #666;
-  font-size: 12px;
-  margin-top: 5px;
-  font-style: italic;
-}
-
-.auto-filled-badge {
-  background: #4caf50;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  margin-left: 5px;
-}
-
-.loading-container {
+/* Retry / Failed Payment */
+.error-message {
+  background: #ffe6e6;
+  border: 1px solid #dc3545;
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem auto;
+  max-width: 600px;
   text-align: center;
-  padding: 40px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-.loading-spinner {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 2s linear infinite;
-  margin: 0 auto 20px;
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 1rem;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.error-message h2 {
+  color: #721c24;
+  margin-bottom: 1rem;
+  font-size: 1.6rem;
 }
 
-.customer-info-confirm {
-  background: #f5f5f5;
-  padding: 12px;
-  border-radius: 6px;
-  margin: 10px 0;
+.error-message p {
+  color: #721c24;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.customer-info-confirm h4 {
-  margin: 0 0 8px 0;
-  color: #333;
+.retry-btn {
+  padding: 10px 20px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.customer-info-confirm p {
-  margin: 4px 0;
-  font-size: 14px;
+.retry-btn:hover {
+  background: #c82333;
 }
 
+
+/* ================= Responsive Design ================= */
+@media (max-width: 768px) {
+  .checkout-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .bundle-detail {
+    flex-direction: column;
+    text-align: center;
+  }
+  .form-actions {
+    flex-direction: column;
+  }
+  .pay-btn, .back-btn {
+    width: 100%;
+  }
+}
