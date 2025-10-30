@@ -10,19 +10,22 @@ const MyTickets = () => {
   const [error, setError] = useState("");
 
   const fetchTickets = async () => {
-  if (!user?.username) return;
-  setLoading(true);
-  try {
-    const res = await fetch(`https://beckendflyio.vercel.app/api/bookings/my-tickets?username=${user.username}`);
-    const data = await res.json();
-    if (data.success) setTickets([...data.data.bookings, ...data.data.bundleOrders]);
-    else setError(data.message || 'Failed to fetch tickets');
-  } catch (err) {
-    console.error(err);
-    setError('Fetch error');
-  }
-  setLoading(false);
-};
+    if (!user?.username) return;
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `https://beckendflyio.vercel.app/api/bookings/my-tickets?username=${user.username}`
+      );
+      const data = await res.json();
+      if (data.success)
+        setTickets([...data.data.bookings, ...data.data.bundleOrders]);
+      else setError(data.message || "Failed to fetch tickets");
+    } catch (err) {
+      console.error(err);
+      setError("Fetch error");
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
     fetchTickets();
@@ -91,7 +94,9 @@ const MyTickets = () => {
                     <span className="label">Booking Date:</span>
                     <span className="value">
                       {ticket.booking_date
-                        ? new Date(ticket.booking_date).toLocaleDateString("id-ID")
+                        ? new Date(ticket.booking_date).toLocaleDateString(
+                            "id-ID"
+                          )
                         : "Unknown date"}
                     </span>
                   </div>
@@ -111,7 +116,11 @@ const MyTickets = () => {
 
                 <div className="ticket-actions">
                   <button
-                    onClick={() => alert(`Ticket: ${ticket.movie_title || ticket.bundle_name}`)}
+                    onClick={() =>
+                      alert(
+                        `Ticket: ${ticket.movie_title || ticket.bundle_name}`
+                      )
+                    }
                     className="view-ticket-btn"
                   >
                     View Ticket
