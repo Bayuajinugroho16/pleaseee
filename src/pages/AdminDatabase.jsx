@@ -25,72 +25,79 @@ const AdminDatabase = () => {
     if (isAdmin) fetchAllData();
   }, [isAdmin]);
 
- const fetchAllData = async () => {
-  try {
-    setLoading(true);
-    setError("");
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("Admin token not found");
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Admin token not found");
 
-    // Tambah cache-busting dan no-store
-    const res = await fetch(
-      `https://beckendflyio.vercel.app/api/admin/all-bookings?_=${Date.now()}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      }
-    );
+      // Tambah cache-busting dan no-store
+      const res = await fetch(
+        `https://beckendflyio.vercel.app/api/admin/all-bookings?_=${Date.now()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }
+      );
 
-    if (!res.ok) throw new Error("Failed to fetch bookings");
+      if (!res.ok) throw new Error("Failed to fetch bookings");
 
-    const result = await res.json();
+      const result = await res.json();
 
-    // Pastikan data ada dan array
-    setBookings(Array.isArray(result.data?.bookings) ? result.data.bookings : []);
-    setBundleOrders(Array.isArray(result.data?.bundleOrders) ? result.data.bundleOrders : []);
-  } catch (err) {
-    console.error(err);
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+      // Pastikan data ada dan array
+      setBookings(
+        Array.isArray(result.data?.bookings) ? result.data.bookings : []
+      );
+      setBundleOrders(
+        Array.isArray(result.data?.bundleOrders) ? result.data.bundleOrders : []
+      );
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getAllOrders = () => {
-  const regular = bookings.map((b) => ({
-    ...b,
-    order_type: "regular",
-    reference: b.booking_reference,
-    display_customer: b.customer_name,
-    display_movie: b.movie_title,
-    display_amount: Number(b.total_amount) || 0,
-    display_status: b.status,
-    has_payment_image: !!b.payment_url,
-    payment_url: b.payment_url || null,
-    // pastikan selalu konversi ke Date object yang valid
-    display_date: b.booking_date ? new Date(b.booking_date) : new Date(0),
-  }));
+    const regular = bookings.map((b) => ({
+      ...b,
+      order_type: "regular",
+      reference: b.booking_reference,
+      display_customer: b.customer_name,
+      display_movie: b.movie_title,
+      display_amount: Number(b.total_amount) || 0,
+      display_status: b.status,
+      has_payment_image: !!b.payment_url,
+      payment_url: b.payment_url || null,
+      // pastikan selalu konversi ke Date object yang valid
+      display_date: b.booking_date ? new Date(b.booking_date) : new Date(0),
+    }));
 
-  const bundle = bundleOrders.map((b) => ({
-  ...b,
-  order_type: "bundle",
-  reference: b.order_reference,
-  display_customer: b.customer_name,
-  display_movie: b.bundle_name,
-  display_amount: Number(b.total_price) || 0, // total price langsung dari server
-  display_status: b.status,
-  has_payment_image: !!b.payment_proof,
-  payment_url: b.payment_proof || null,
-  display_date: b.booking_date
-    ? new Date(b.booking_date)
-    : b.order_date
-    ? new Date(b.order_date)
-    : new Date(0),
-}));
+    const bundle = bundleOrders.map((b) => ({
+      ...b,
+      order_type: "bundle",
+      reference: b.order_reference,
+      display_customer: b.customer_name,
+      display_address: b.customer_address,
+      display_movie: b.bundle_name,
+      display_amount: Number(b.total_price) || 0, // total price langsung dari server
+      display_status: b.status,
+      has_payment_image: !!b.payment_proof,
+      payment_url: b.payment_proof || null,
+      display_date: b.booking_date
+        ? new Date(b.booking_date)
+        : b.order_date
+        ? new Date(b.order_date)
+        : new Date(0),
+    }));
 
-  // gabungkan dan urutkan dari terbaru
-  return [...regular, ...bundle].sort((a, b) => b.display_date - a.display_date);
-};
+    // gabungkan dan urutkan dari terbaru
+    return [...regular, ...bundle].sort(
+      (a, b) => b.display_date - a.display_date
+    );
+  };
 
   const allOrders = getAllOrders();
 
@@ -157,6 +164,7 @@ const AdminDatabase = () => {
             <th>Type</th>
             <th>ID</th>
             <th>Customer</th>
+            <th>Email/Address</th>
             <th>Movie/Bundle</th>
             <th>Amount</th>
             <th>Status</th>
@@ -171,6 +179,11 @@ const AdminDatabase = () => {
               <td>{o.order_type === "bundle" ? "🎁 Bundle" : "🎬 Movie"}</td>
               <td>{o.id}</td>
               <td>{o.display_customer}</td>
+              <td>
+                {o.order_type === "bundle"
+                  ? o.display_address || "-"
+                  : o.display_email || "-"}
+              </td>
               <td>{o.display_movie}</td>
               <td>Rp {o.display_amount?.toLocaleString()}</td>
               <td>{o.display_status}</td>
