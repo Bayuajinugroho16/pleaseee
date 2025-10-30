@@ -15,7 +15,7 @@ const BundleCheckout = () => {
   const [customerData, setCustomerData] = useState({
     name: "",
     phone: "",
-    email: "",
+    address: "",
     quantity: 1,
   });
   const [paymentProof, setPaymentProof] = useState(null);
@@ -39,10 +39,9 @@ const BundleCheckout = () => {
 
     setCustomerData((prev) => ({
       ...prev,
-      name:
-        user.username || user.name || user.email?.split("@")[0] || "Customer",
+      name: user.username || user.name || "Customer",
       phone: user.phone || "",
-      email: user.email || "",
+      address: "", // biarkan kosong, nanti user isi manual
     }));
   }, [user, isAuthenticated, navigate]);
 
@@ -124,7 +123,7 @@ const BundleCheckout = () => {
               total_price: totalPrice,
               customer_name: customerData.name,
               customer_phone: customerData.phone,
-              customer_email: customerData.email || "",
+              customer_address: customerData.address || "",
               status: "pending",
             }),
           }
@@ -378,14 +377,14 @@ const BundleCheckout = () => {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="email">Email</label>
+                <label htmlFor="address">Alamat</label>
                 <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={customerData.email}
+                  type="address"
+                  id="address"
+                  name="address"
+                  value={customerData.address}
                   onChange={handleInputChange}
-                  placeholder="email@example.com"
+                  placeholder="Jl. Sumbersari No. J1-09, Jember"
                 />
               </div>
 
