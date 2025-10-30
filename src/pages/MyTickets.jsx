@@ -10,17 +10,19 @@ const MyTickets = () => {
   const [error, setError] = useState("");
 
   const fetchTickets = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`https://beckendflyio.vercel.app/api/bookings/my-tickets?username=${username}`);
-        const data = await res.json();
-        if (data.success) setTickets(data.data);
-        else console.error("Failed to fetch tickets:", data.message);
-      } catch (err) {
-        console.error("Fetch error:", err);
-      }
-      setLoading(false);
-    };
+  if (!user?.username) return;
+  setLoading(true);
+  try {
+    const res = await fetch(`https://beckendflyio.vercel.app/api/bookings/my-tickets?username=${user.username}`);
+    const data = await res.json();
+    if (data.success) setTickets([...data.data.bookings, ...data.data.bundleOrders]);
+    else setError(data.message || 'Failed to fetch tickets');
+  } catch (err) {
+    console.error(err);
+    setError('Fetch error');
+  }
+  setLoading(false);
+};
 
   useEffect(() => {
     fetchTickets();
