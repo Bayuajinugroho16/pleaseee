@@ -69,9 +69,8 @@ const AdminDatabase = () => {
       display_movie: b.movie_title,
       display_amount: Number(b.total_amount) || 0,
       display_status: b.status,
-      has_payment_image: !!b.payment_url,
-      payment_url: b.payment_url || null,
-      // pastikan selalu konversi ke Date object yang valid
+      has_payment_image: !!(b.payment_url || b.payment_proof),
+      payment_url: b.payment_url || b.payment_proof || null,
       display_date: b.booking_date ? new Date(b.booking_date) : new Date(0),
     }));
 
