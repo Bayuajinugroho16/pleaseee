@@ -32,7 +32,7 @@ const Tutorial = () => {
       
       <div className="tutorial-content">
         <div className="tutorial-header">
-          <h1>📚 Tutorial & Resources</h1>
+          <h1> Tutorial & Resources</h1>
           <p>Kumpulan tutorial, dokumentasi, dan resources untuk project bioskop</p>
         </div>
 
@@ -44,12 +44,12 @@ const Tutorial = () => {
               onClick={() => handleLinkClick(link)}
             >
               <div className="card-icon">
-                {link.type === 'video' && '📹'}
-                {link.type === 'document' && '📖'}
-                {link.type === 'design' && '🎨'}
-                {link.type === 'api' && '🔧'}
-                {link.type === 'guide' && '📱'}
-                {link.type === 'deployment' && '🚀'}
+                {link.type === 'video' && ''}
+                {link.type === 'document' && ''}
+                {link.type === 'design' && ''}
+                {link.type === 'api' && ''}
+                {link.type === 'guide' && ''}
+                {link.type === 'deployment' && ''}
               </div>
               <div className="card-content">
                 <h3>{link.title}</h3>
@@ -64,10 +64,9 @@ const Tutorial = () => {
         </div>
 
         <div className="tutorial-info">
-          <h3>💡 Informasi</h3>
+          <h3> Informasi</h3>
           <p>
-            Semua resources disimpan di Google Drive. Klik pada card untuk membuka file yang diinginkan.
-            Pastikan Anda memiliki akses ke file tersebut.
+            Semua tutorial pemesanan tiket layar kompetisi dan bundle tiket disimpan di Google Drive. Klik pada card untuk membuka file yang diinginkan.
           </p>
         </div>
       </div>
