@@ -26,44 +26,39 @@ const AdminDatabase = () => {
   }, [isAdmin]);
 
   const fetchAllData = async () => {
-  try {
-    setLoading(true);
-    setError("");
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("Admin token not found");
+    try {
+      setLoading(true);
+      setError("");
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Admin token not found");
 
-    // ✅ Tambahkan mode credentials dan headers lengkap
-    const res = await fetch(
-      `https://beckendflyio.vercel.app/api/admin/all-bookings?_=${Date.now()}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Cache-Control": "no-store",
-        },
-        credentials: "include", // penting untuk vercel/secure fetch
-      }
-    );
+      // Tambah cache-busting dan no-store
+      const res = await fetch(
+        `https://beckendflyio.vercel.app/api/admin/all-bookings?_=${Date.now()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }
+      );
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("Fetch error:", errText);
-      throw new Error("Failed to fetch bookings");
+      if (!res.ok) throw new Error("Failed to fetch bookings");
+
+      const result = await res.json();
+
+      // Pastikan data ada dan array
+      setBookings(
+        Array.isArray(result.data?.bookings) ? result.data.bookings : []
+      );
+      setBundleOrders(
+        Array.isArray(result.data?.bundleOrders) ? result.data.bundleOrders : []
+      );
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    const result = await res.json();
-    console.log("📦 Admin all-bookings result:", result); // 👈 cek isi dari server
-
-    setBookings(Array.isArray(result.data?.bookings) ? result.data.bookings : []);
-    setBundleOrders(Array.isArray(result.data?.bundleOrders) ? result.data.bundleOrders : []);
-  } catch (err) {
-    console.error(err);
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const getAllOrders = () => {
     const regular = bookings.map((b) => ({
