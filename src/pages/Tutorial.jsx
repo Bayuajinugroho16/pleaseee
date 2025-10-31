@@ -6,8 +6,8 @@ const Tutorial = () => {
   const tutorialLinks = [
     {
       id: 1,
-      title: "Tutorial Beli Bundle Ticket",
-      description: "Video panduan pesan tiket bundle",
+      title: "Tutorial Pemesanan Tiker Layar Kompetisi",
+      description: "Video panduan pesan tiket layar kompetisi",
       driveLink: "https://drive.google.com/drive/folders/1bLcX3TqdZ3TwexaQzSeVuaccYSpz3pcJ?usp=sharing",
       type: "video"
     },
