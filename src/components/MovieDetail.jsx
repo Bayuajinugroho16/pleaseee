@@ -32,11 +32,11 @@ const Moviedetail2 = () => {
           id: 1,
           title: "Sopir Angkot Menembus Asa dan Masa",
           kategori: "Gati Jemberan",
-          duration: " 10m ",
+          duration: "10m",
           Asal: "Nirmala Production",
           poster: "/film/1.png",
           detailLink: "/Moviedetail2",
-          synopsis: `Modernisasi telah mengubah wajah transportasi di Jember. Angkot, yang dulu menjadi urat nadi mobilitas masyarakat, kini mulai ditinggalkan. Kehadiran kendaraan pribadi dan ojek online yang dianggap lebih praktis membuat eksistensi angkot semakin terdesak.
+          synopsis: `Modernisasi telah mengubah wajah transportasi di Jember. Angkot, yang dulu menjadi urat nadi mobilitas masyarakat, kini mulai ditinggalkan. Kehadiran kendaraan pribadi dan ojek online yang dianggap lebih praktis membuat eksistensi angkot semakin terdesak. 
 
 Di tengah arus perubahan itu, hadir kisah Soekarno, seorang sopir angkot yang telah mengemudi sejak 1986. Ia menyaksikan langsung masa kejayaan angkot hingga kemerosotannya hari ini. Jika dulu penghasilan sehari bisa mencukupi kebutuhan seminggu, kini ia hanya bisa bersyukur ketika ada penumpang yang naik.
 
@@ -47,44 +47,34 @@ Film dokumenter ini tidak hanya menyoroti keteguhan seorang sopir untuk bertahan
         {
           id: 2,
           title: "Jagawana",
-          kategori: " Pelajar ",
-          duration: " 8m ",
+          kategori: "Pelajar",
+          duration: "8m",
           Asal: "Skrinova",
           poster: "/film/2.jpg",
           detailLink: "/Moviedetail2",
-          synopsis: `Yogyakarta yang dikenal sebagai kota pelajar hingga saat ini masih kesulitan dalam menanggulangi kekerasan dan kejahatan jalanan yang kerap dilakukan oleh para pemudanya. Di tengah permasalahan sosial yang tak kunjung usai ini, tumbuh komunitas kecil bernama Fight Club YK yang memiliki sub komunitas bernama Fight Club YK Camp.
+          synopsis: `Di lereng subur Gunung Muria, komunitas Peka Muria hidup berdampingan dengan alam. Mereka adalah penjaga sejati, merawat kebun kopi dan hutan lebat dengan kearifan tradisi. Jejak satwa liar terekam kamera trap, sementara drone mengungkap keindahan hutan pranak yang memukau. 
 
-Komunitas ini tumbuh menjadi lebih dari sekadar klub bela diri. Didirikan oleh sekelompok anak muda yang resah dengan kejahatan dan kekerasan jalanan, mereka menggunakan ring tinju sebagai medium untuk meredam masalah sosial ini. Sebuah dokumenter tentang transformasi energi negatif menjadi kekuatan positif melalui olahraga.`,
+Film dokumenter ini merajut suara alam dan kerja keras komunitas, menampilkan perjuangan, cinta mendalam pada bumi, dan harapan untuk melestarikan warisan leluhur di jantung Muria.`,
         },
         {
           id: 3,
-          title: "African Indonesian Journey",
-          kategori: " Dokumenter ",
-          duration: " 17m ",
+          title: "African Roots: The Hearts of Little Blacksheep",
+          kategori: "Dokumenter",
+          duration: "17m",
           Asal: "Piring Kotor Production",
           poster: "/film/3.PNG",
           detailLink: "/Moviedetail2",
-          synopsis: `Logandu, merupakan salah satu Desa di Kec. Karanggayam Kab. Kebumen Prov. Jawa Tengah. Di berbagai daerah terdapat adat istiadat yang bisa disebut sabanan yang berasal dari kata serada, salah satunya di desa Logandu.
-
-Di desa Logandu, adat serada biasanya melakukan bersih-bersih makam untuk menyambut bulan suci Ramadhan dan wujud penghormatan terhadap leluhur sekaligus perwujudan bakti anak cucu kepada orang tua. Setelah bersih-bersih makam, warga desa Logandu dibagi menjadi dua tempat untuk melakukan kendurenan di rumah pak kepala desa dan pak kepala dusun.
-
-Namun sebagian warga tertentu ada yang melakukan sendiri di rumahnya. Biasanya warga Logandu menyebutnya kendurenan untuk unggah-unggahan atau diangkatnya ruh leluhur. Setelah 22 hari berpuasa dilakukan kenduren lagi yang disebut kenduren likuran (udun udunan). Hal ini tentunya wujud dari kekompakan para warga untuk melakukan gotong-royong.`,
+          synopsis: `Sebuah dokumenter yang mewawancarai empat anak muda keturunan Afrika–Indonesia dan mengeksplorasi dilema budaya yang mereka alami. Dokumenter ini melihat bagaimana mereka beradaptasi dengan budaya Indonesia, meskipun komunitas mereka memiliki budaya sendiri dan pengalaman diskriminasi selama mereka tumbuh besar.`,
         },
         {
           id: 4,
           title: "Titip Pesan",
           kategori: "Fiksi Umum",
-          duration: " 15m ",
+          duration: "15m",
           Asal: "BYFILMS",
           poster: "/film/4.png",
           detailLink: "/Moviedetail2",
-          synopsis: `Seorang pria dari luar kota datang ke desa untuk melamar kekasihnya. Lamaran itu diterima dengan syarat ia harus tinggal di rumah adat yang telah disediakan sebagai bagian dari tradisi pernikahan. 
-
-Awalnya, pria itu merasa ragu karena rumah kayu itu tampak asing dan tak meyakinkan baginya. Ia sempat mengusulkan untuk tinggal sementara lalu pindah ke kota, namun ditolak oleh pasangannya yang ingin tetap di desa. 
-
-Saat memeriksa rumah lebih lanjut, pria itu menemukan banyak keunggulan tersembunyi dari struktur kokoh, pencahayaan alami, hingga kehangatan desain ruang tanpa sekat. Ia akhirnya menerima syarat tersebut, mengisi rumah dengan perabotan, dan menikah. 
-
-Bertahun-tahun kemudian, ia terlihat duduk di teras sebagai seorang kakek, tersenyum melihat cucu-cucunya bermain, mengenang keputusannya yang dulu. Sebuah kisah tentang cinta, tradisi, dan makna sebenarnya dari sebuah rumah.`,
+          synopsis: `Perjalanan Majep (28), seorang ojek online, melawan ketakutannya menyusuri jalanan asing dan hutan untuk mengantar pesanan customer wanita muda. Hingga ia sampai di sebuah makam tanpa nama milik janin hasil aborsi customer dan meninggalkan pesanan berisi kue ulang tahun dan surat penyesalan.`,
         },
       ];
 
